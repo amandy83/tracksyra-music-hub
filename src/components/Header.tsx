@@ -17,11 +17,14 @@ const Header = () => {
           <a href="#platforms" className="text-muted-foreground hover:text-foreground transition-colors">
             Platforms
           </a>
-          <a href="#pricing" className="text-muted-foreground hover:text-foreground transition-colors">
-            Pricing
-          </a>
           <a href="#testimonials" className="text-muted-foreground hover:text-foreground transition-colors">
             Artists
+          </a>
+          <a href="#blog" className="text-muted-foreground hover:text-foreground transition-colors">
+            Blog
+          </a>
+          <a href="#faq" className="text-muted-foreground hover:text-foreground transition-colors">
+            FAQ
           </a>
         </nav>
 

@@ -1,4 +1,4 @@
-import { Star } from "lucide-react";
+import { Star, Quote } from "lucide-react";
 
 const testimonials = [
   {
@@ -33,10 +33,10 @@ const testimonials = [
 
 const TestimonialsSection = () => {
   return (
-    <section id="testimonials" className="py-24 relative">
+    <section id="testimonials" className="py-24 bg-secondary/30">
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-foreground">
             Loved by
             <span className="gradient-text"> Artists Worldwide</span>
           </h2>
@@ -49,16 +49,18 @@ const TestimonialsSection = () => {
           {testimonials.map((testimonial, index) => (
             <div
               key={testimonial.name}
-              className="p-6 rounded-2xl bg-card/50 border border-border hover:border-primary/30 transition-all duration-300 animate-fade-in"
+              className="p-8 rounded-2xl bg-background border border-border hover:shadow-xl transition-all duration-300 animate-fade-in relative"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
+              <Quote className="absolute top-6 right-6 w-10 h-10 text-primary/10" />
+              
               <div className="flex gap-1 mb-4">
                 {[...Array(testimonial.rating)].map((_, i) => (
                   <Star key={i} className="w-5 h-5 fill-primary text-primary" />
                 ))}
               </div>
               
-              <p className="text-foreground mb-6 italic">"{testimonial.quote}"</p>
+              <p className="text-foreground mb-6 text-lg">"{testimonial.quote}"</p>
               
               <div className="flex items-center gap-4">
                 <img
@@ -67,7 +69,7 @@ const TestimonialsSection = () => {
                   className="w-12 h-12 rounded-full object-cover border-2 border-primary/30"
                 />
                 <div>
-                  <div className="font-semibold">{testimonial.name}</div>
+                  <div className="font-semibold text-foreground">{testimonial.name}</div>
                   <div className="text-sm text-muted-foreground">{testimonial.role}</div>
                 </div>
               </div>
