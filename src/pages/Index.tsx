@@ -5,8 +5,10 @@ import PlatformsSection from "@/components/PlatformsSection";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import BlogSection from "@/components/BlogSection";
 import FAQSection from "@/components/FAQSection";
+import ContactSection from "@/components/ContactSection";
 import CTASection from "@/components/CTASection";
 import Footer from "@/components/Footer";
+import { Toaster } from "@/components/ui/toaster";
 
 const Index = () => {
   return (
@@ -19,9 +21,11 @@ const Index = () => {
         <TestimonialsSection />
         <BlogSection />
         <FAQSection />
+        <ContactSection />
         <CTASection />
       </main>
       <Footer />
+      <Toaster />
     </div>
   );
 };
