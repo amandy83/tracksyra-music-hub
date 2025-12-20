@@ -1,4 +1,5 @@
 import { Star, Quote } from "lucide-react";
+import { useGSAPStagger } from "@/hooks/useGSAP";
 
 const testimonials = [
   {
@@ -32,6 +33,8 @@ const testimonials = [
 ];
 
 const TestimonialsSection = () => {
+  const containerRef = useGSAPStagger();
+
   return (
     <section id="testimonials" className="py-24 bg-secondary/30">
       <div className="container mx-auto px-4 relative z-10">
@@ -45,14 +48,13 @@ const TestimonialsSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          {testimonials.map((testimonial, index) => (
+        <div ref={containerRef} className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+          {testimonials.map((testimonial) => (
             <div
               key={testimonial.name}
-              className="p-8 rounded-2xl bg-background border border-border hover:shadow-xl transition-all duration-300 animate-fade-in relative"
-              style={{ animationDelay: `${index * 0.1}s` }}
+              className="gsap-stagger p-8 rounded-2xl bg-background border border-border hover:shadow-xl transition-all duration-300 relative group"
             >
-              <Quote className="absolute top-6 right-6 w-10 h-10 text-primary/10" />
+              <Quote className="absolute top-6 right-6 w-10 h-10 text-primary/10 group-hover:text-primary/20 transition-colors" />
               
               <div className="flex gap-1 mb-4">
                 {[...Array(testimonial.rating)].map((_, i) => (
