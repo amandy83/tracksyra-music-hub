@@ -1,5 +1,6 @@
 import { ArrowRight, Calendar, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useGSAPStagger } from "@/hooks/useGSAP";
 
 const blogPosts = [
   {
@@ -29,6 +30,8 @@ const blogPosts = [
 ];
 
 const BlogSection = () => {
+  const containerRef = useGSAPStagger();
+
   return (
     <section id="blog" className="py-24 bg-background">
       <div className="container mx-auto px-4">
@@ -48,12 +51,11 @@ const BlogSection = () => {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div ref={containerRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {blogPosts.map((post, index) => (
             <article
               key={index}
-              className="group bg-card rounded-2xl overflow-hidden border border-border hover:shadow-xl transition-all duration-300 animate-fade-in"
-              style={{ animationDelay: `${index * 0.1}s` }}
+              className="gsap-stagger group bg-card rounded-2xl overflow-hidden border border-border hover:shadow-xl transition-all duration-300"
             >
               <div className="aspect-[16/10] overflow-hidden">
                 <img

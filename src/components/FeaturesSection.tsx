@@ -1,4 +1,5 @@
 import { Globe, Zap, Shield, DollarSign, BarChart3, Headphones } from "lucide-react";
+import { useGSAPStagger } from "@/hooks/useGSAP";
 
 const features = [
   {
@@ -34,10 +35,12 @@ const features = [
 ];
 
 const FeaturesSection = () => {
+  const containerRef = useGSAPStagger();
+
   return (
     <section id="features" className="py-24 bg-background">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 gsap-fade-up">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-foreground">
             Everything You Need to
             <span className="gradient-text"> Succeed</span>
@@ -48,12 +51,11 @@ const FeaturesSection = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature, index) => (
+        <div ref={containerRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {features.map((feature) => (
             <div
               key={feature.title}
-              className="group relative p-8 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-xl transition-all duration-300 animate-fade-in"
-              style={{ animationDelay: `${index * 0.1}s` }}
+              className="gsap-stagger group relative p-8 rounded-2xl bg-card border border-border hover:border-primary/50 hover:shadow-xl transition-all duration-300"
             >
               <div className="w-14 h-14 rounded-xl gradient-bg flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
                 <feature.icon className="w-7 h-7 text-primary-foreground" />

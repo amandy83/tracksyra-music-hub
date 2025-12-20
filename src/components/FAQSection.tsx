@@ -1,9 +1,11 @@
+import { useEffect, useRef } from "react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { gsap } from "@/hooks/useGSAP";
 
 const faqs = [
   {
@@ -41,10 +43,57 @@ const faqs = [
 ];
 
 const FAQSection = () => {
+  const sectionRef = useRef<HTMLElement>(null);
+  const titleRef = useRef<HTMLDivElement>(null);
+  const accordionRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      // Title animation
+      gsap.fromTo(
+        titleRef.current,
+        { opacity: 0, y: 50 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: titleRef.current,
+            start: "top 85%",
+          },
+        }
+      );
+
+      // Accordion items stagger
+      const items = accordionRef.current?.querySelectorAll("[data-faq-item]");
+      if (items) {
+        gsap.fromTo(
+          items,
+          { opacity: 0, y: 30, scale: 0.98 },
+          {
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            duration: 0.6,
+            stagger: 0.1,
+            ease: "power2.out",
+            scrollTrigger: {
+              trigger: accordionRef.current,
+              start: "top 85%",
+            },
+          }
+        );
+      }
+    }, sectionRef);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <section id="faq" className="py-24 bg-secondary/30">
+    <section ref={sectionRef} id="faq" className="py-24 bg-secondary/30">
       <div className="container mx-auto px-4">
-        <div className="text-center mb-16">
+        <div ref={titleRef} className="text-center mb-16" style={{ opacity: 0 }}>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-foreground">
             Frequently Asked
             <span className="gradient-text"> Questions</span>
@@ -54,13 +103,15 @@ const FAQSection = () => {
           </p>
         </div>
 
-        <div className="max-w-3xl mx-auto">
+        <div ref={accordionRef} className="max-w-3xl mx-auto">
           <Accordion type="single" collapsible className="space-y-4">
             {faqs.map((faq, index) => (
               <AccordionItem
                 key={index}
                 value={`item-${index}`}
+                data-faq-item
                 className="bg-background border border-border rounded-xl px-6 data-[state=open]:shadow-lg transition-shadow"
+                style={{ opacity: 0 }}
               >
                 <AccordionTrigger className="text-left text-foreground font-semibold hover:no-underline py-5">
                   {faq.question}
