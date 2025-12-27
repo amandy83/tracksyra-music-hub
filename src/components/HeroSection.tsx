@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Rocket, Play, ArrowRight } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { gsap } from "@/hooks/useGSAP";
-import SplineBackground from "./SplineBackground";
+import Interactive3DBackground from "./Interactive3DBackground";
 
 const HeroSection = () => {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -55,8 +55,8 @@ const HeroSection = () => {
       ref={heroRef}
       className="relative min-h-[90vh] flex items-center justify-center overflow-hidden pt-20"
     >
-      {/* Spline 3D Background */}
-      <SplineBackground />
+      {/* Interactive 3D Background */}
+      <Interactive3DBackground />
 
       <div className="container mx-auto px-4 relative z-20">
         <div className="max-w-4xl mx-auto text-center">
