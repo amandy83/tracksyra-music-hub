@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
-import logo from "@/assets/tracksyra-logo.png";
+import Logo from "./Logo";
 import { gsap } from "@/hooks/useGSAP";
 
 const Header = () => {
@@ -68,13 +68,7 @@ const Header = () => {
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <img
-              ref={logoRef}
-              src={logo}
-              alt="TrackSyra"
-              className="h-10 w-auto"
-              style={{ opacity: 0 }}
-            />
+            <Logo ref={logoRef} style={{ opacity: 0 }} />
           </Link>
 
           {/* Desktop Navigation */}
