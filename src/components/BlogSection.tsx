@@ -1,6 +1,7 @@
 import { ArrowRight, Calendar, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useGSAPStagger } from "@/hooks/useGSAP";
+import { Link } from "react-router-dom";
 
 const blogPosts = [
   {
@@ -33,56 +34,58 @@ const BlogSection = () => {
   const containerRef = useGSAPStagger();
 
   return (
-    <section id="blog" className="py-24 bg-background">
+    <section id="blog" className="py-16 bg-background">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-12">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-10">
           <div>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-foreground">
+            <h2 className="text-3xl sm:text-4xl font-bold mb-3 text-foreground">
               Latest from
               <span className="gradient-text"> Our Blog</span>
             </h2>
-            <p className="text-lg text-muted-foreground max-w-xl">
+            <p className="text-muted-foreground max-w-xl">
               Tips, insights, and industry news to help you grow your music career.
             </p>
           </div>
-          <Button variant="outline" className="group">
-            View All Posts
-            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-          </Button>
+          <Link to="/blog">
+            <Button variant="outline" className="group">
+              View All Posts
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+            </Button>
+          </Link>
         </div>
 
-        <div ref={containerRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div ref={containerRef} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {blogPosts.map((post, index) => (
             <article
               key={index}
-              className="gsap-stagger group bg-card rounded-2xl overflow-hidden border border-border hover:shadow-xl transition-all duration-300"
+              className="gsap-stagger group bg-card rounded-2xl overflow-hidden border border-border hover:shadow-xl hover:border-primary/30 transition-all duration-300"
             >
-              <div className="aspect-[16/10] overflow-hidden">
+              <div className="aspect-video overflow-hidden">
                 <img
                   src={post.image}
                   alt={post.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
               </div>
-              <div className="p-6">
-                <div className="flex items-center gap-4 mb-4">
+              <div className="p-5">
+                <div className="flex items-center gap-3 mb-3">
                   <span className="px-3 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
                     {post.category}
                   </span>
                 </div>
-                <h3 className="text-xl font-bold mb-3 text-foreground group-hover:text-primary transition-colors line-clamp-2">
+                <h3 className="text-lg font-bold mb-2 text-foreground group-hover:text-primary transition-colors line-clamp-2">
                   {post.title}
                 </h3>
-                <p className="text-muted-foreground mb-4 line-clamp-2">
+                <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                   {post.excerpt}
                 </p>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
                   <span className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
+                    <Calendar className="w-3 h-3" />
                     {post.date}
                   </span>
                   <span className="flex items-center gap-1">
-                    <Clock className="w-4 h-4" />
+                    <Clock className="w-3 h-3" />
                     {post.readTime}
                   </span>
                 </div>

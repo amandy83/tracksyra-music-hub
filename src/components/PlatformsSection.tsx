@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { gsap, ScrollTrigger } from "@/hooks/useGSAP";
+import { gsap } from "@/hooks/useGSAP";
 
 const platforms = [
   { name: "Spotify", color: "#1DB954" },
@@ -19,12 +19,12 @@ const platforms = [
 const PlatformsSection = () => {
   const sectionRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const track1Ref = useRef<HTMLDivElement>(null);
+  const track2Ref = useRef<HTMLDivElement>(null);
   const countRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      // Title animation
       gsap.fromTo(
         titleRef.current,
         { opacity: 0, y: 50 },
@@ -40,23 +40,6 @@ const PlatformsSection = () => {
         }
       );
 
-      // Platform cards stagger
-      gsap.fromTo(
-        scrollRef.current,
-        { opacity: 0, x: -100 },
-        {
-          opacity: 1,
-          x: 0,
-          duration: 1.2,
-          ease: "power2.out",
-          scrollTrigger: {
-            trigger: scrollRef.current,
-            start: "top 85%",
-          },
-        }
-      );
-
-      // Counter animation
       gsap.fromTo(
         countRef.current,
         { opacity: 0, scale: 0.8 },
@@ -77,62 +60,78 @@ const PlatformsSection = () => {
   }, []);
 
   return (
-    <section ref={sectionRef} id="platforms" className="py-24 bg-secondary/30 relative overflow-hidden">
+    <section ref={sectionRef} id="platforms" className="py-16 bg-secondary/30 relative overflow-hidden">
       <div className="container mx-auto px-4 relative z-10">
-        <div ref={titleRef} className="text-center mb-16" style={{ opacity: 0 }}>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-foreground">
+        <div ref={titleRef} className="text-center mb-10" style={{ opacity: 0 }}>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-3 text-foreground">
             Your Music on
             <span className="gradient-text"> Every Platform</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            We distribute your music to 150+ streaming platforms and digital stores worldwide. 
-            Reach your fans wherever they listen.
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            We distribute your music to 150+ streaming platforms. Reach your fans wherever they listen and earn 90% royalties.
           </p>
         </div>
 
-        {/* Scrolling platforms */}
-        <div className="relative">
-          <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-secondary/30 to-transparent z-10" />
-          <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-secondary/30 to-transparent z-10" />
+        {/* Double row marquee */}
+        <div className="relative space-y-4">
+          <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-secondary/30 to-transparent z-10" />
+          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-secondary/30 to-transparent z-10" />
           
-          <div ref={scrollRef} className="flex gap-6 animate-scroll overflow-hidden" style={{ opacity: 0 }}>
-            {[...platforms, ...platforms].map((platform, index) => (
+          {/* First row - left to right */}
+          <div ref={track1Ref} className="flex gap-4 marquee-track">
+            {[...platforms, ...platforms, ...platforms].map((platform, index) => (
               <div
-                key={`${platform.name}-${index}`}
-                className="flex-shrink-0 px-8 py-4 rounded-xl bg-background border border-border hover:border-primary/50 transition-all duration-300 hover:scale-105 shadow-sm"
+                key={`row1-${platform.name}-${index}`}
+                className="flex-shrink-0 px-6 py-3 rounded-xl bg-background border border-border hover:border-primary/50 transition-all duration-300 hover:scale-105 shadow-sm"
               >
-                <span className="text-lg font-semibold whitespace-nowrap text-foreground">{platform.name}</span>
+                <span className="text-sm font-semibold whitespace-nowrap text-foreground">{platform.name}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Second row - right to left */}
+          <div ref={track2Ref} className="flex gap-4 marquee-track-reverse">
+            {[...platforms.slice().reverse(), ...platforms.slice().reverse(), ...platforms.slice().reverse()].map((platform, index) => (
+              <div
+                key={`row2-${platform.name}-${index}`}
+                className="flex-shrink-0 px-6 py-3 rounded-xl bg-background border border-border hover:border-primary/50 transition-all duration-300 hover:scale-105 shadow-sm"
+              >
+                <span className="text-sm font-semibold whitespace-nowrap text-foreground">{platform.name}</span>
               </div>
             ))}
           </div>
         </div>
 
         {/* Platform count */}
-        <div className="mt-16 text-center">
+        <div className="mt-10 text-center">
           <div
             ref={countRef}
-            className="inline-flex items-center gap-4 px-8 py-4 rounded-2xl bg-background border border-border shadow-sm"
+            className="inline-flex items-center gap-3 px-6 py-3 rounded-2xl bg-background border border-border shadow-sm"
             style={{ opacity: 0 }}
           >
-            <span className="text-4xl font-bold gradient-text">150+</span>
-            <span className="text-muted-foreground">Streaming Platforms & Digital Stores</span>
+            <span className="text-3xl font-bold gradient-text">150+</span>
+            <span className="text-sm text-muted-foreground">Streaming Platforms & Digital Stores</span>
           </div>
         </div>
       </div>
 
       <style>{`
-        @keyframes scroll {
-          0% {
-            transform: translateX(0);
-          }
-          100% {
-            transform: translateX(-50%);
-          }
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-33.33%); }
         }
-        .animate-scroll {
-          animation: scroll 30s linear infinite;
+        @keyframes marquee-reverse {
+          0% { transform: translateX(-33.33%); }
+          100% { transform: translateX(0); }
         }
-        .animate-scroll:hover {
+        .marquee-track {
+          animation: marquee 25s linear infinite;
+        }
+        .marquee-track-reverse {
+          animation: marquee-reverse 25s linear infinite;
+        }
+        .marquee-track:hover,
+        .marquee-track-reverse:hover {
           animation-play-state: paused;
         }
       `}</style>
