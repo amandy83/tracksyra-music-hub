@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { gsap } from "@/hooks/useGSAP";
-import { Send, Mail, User, MessageSquare } from "lucide-react";
+import { Send, Mail, User, MessageSquare, Key } from "lucide-react";
 import { z } from "zod";
 
 const contactSchema = z.object({
@@ -16,9 +16,13 @@ const contactSchema = z.object({
 
 type ContactFormData = z.infer<typeof contactSchema>;
 
+const WEB3FORMS_KEY_STORAGE = "web3forms_access_key";
+
 const ContactSection = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [accessKey, setAccessKey] = useState(() => localStorage.getItem(WEB3FORMS_KEY_STORAGE) || "");
+  const [showKeyInput, setShowKeyInput] = useState(!localStorage.getItem(WEB3FORMS_KEY_STORAGE));
   const [formData, setFormData] = useState<ContactFormData>({
     name: "",
     email: "",
@@ -70,17 +74,37 @@ const ContactSection = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
     if (errors[name as keyof ContactFormData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
   };
 
+  const saveAccessKey = () => {
+    if (accessKey.trim()) {
+      localStorage.setItem(WEB3FORMS_KEY_STORAGE, accessKey.trim());
+      setShowKeyInput(false);
+      toast({
+        title: "API Key Saved",
+        description: "Your Web3Forms access key has been saved.",
+      });
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!accessKey.trim()) {
+      toast({
+        title: "API Key Required",
+        description: "Please enter your Web3Forms access key first.",
+        variant: "destructive",
+      });
+      setShowKeyInput(true);
+      return;
+    }
+
     setIsSubmitting(true);
 
-    // Validate form data
     const result = contactSchema.safeParse(formData);
 
     if (!result.success) {
@@ -99,44 +123,103 @@ const ContactSection = () => {
       return;
     }
 
-    // Simulate form submission (replace with actual API call)
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          access_key: accessKey,
+          name: formData.name,
+          email: formData.email,
+          message: formData.message,
+          from_name: "TrackSyra Contact Form",
+        }),
+      });
 
-    toast({
-      title: "Message Sent!",
-      description: "Thank you for reaching out. We'll get back to you soon.",
-    });
+      const data = await response.json();
 
-    // Reset form
-    setFormData({ name: "", email: "", message: "" });
-    setErrors({});
-    setIsSubmitting(false);
+      if (data.success) {
+        toast({
+          title: "Message Sent!",
+          description: "Thank you for reaching out. We'll get back to you soon.",
+        });
+        setFormData({ name: "", email: "", message: "" });
+        setErrors({});
+      } else {
+        throw new Error(data.message || "Failed to send message");
+      }
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to send message. Please check your API key and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <section ref={sectionRef} id="contact" className="py-24 bg-background">
+    <section ref={sectionRef} id="contact" className="py-16 bg-background">
       <div className="container mx-auto px-4">
-        <div ref={titleRef} className="text-center mb-16" style={{ opacity: 0 }}>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-4 text-foreground">
+        <div ref={titleRef} className="text-center mb-10" style={{ opacity: 0 }}>
+          <h2 className="text-3xl sm:text-4xl font-bold mb-3 text-foreground">
             Get in
             <span className="gradient-text"> Touch</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-muted-foreground max-w-2xl mx-auto">
             Have questions about distributing your music? We're here to help. Send us a message and our team will get back to you within 24 hours.
           </p>
         </div>
 
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-xl mx-auto">
+          {/* API Key Input */}
+          {showKeyInput && (
+            <div className="mb-6 p-4 rounded-xl bg-secondary/50 border border-border">
+              <Label className="flex items-center gap-2 text-foreground mb-2">
+                <Key className="w-4 h-4 text-primary" />
+                Web3Forms Access Key
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  type="password"
+                  placeholder="Paste your access key here"
+                  value={accessKey}
+                  onChange={(e) => setAccessKey(e.target.value)}
+                  className="flex-1"
+                />
+                <Button onClick={saveAccessKey} variant="outline">
+                  Save
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Get your free key at <a href="https://web3forms.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">web3forms.com</a>
+              </p>
+            </div>
+          )}
+
+          {!showKeyInput && (
+            <button
+              onClick={() => setShowKeyInput(true)}
+              className="text-xs text-muted-foreground hover:text-primary mb-4 flex items-center gap-1"
+            >
+              <Key className="w-3 h-3" />
+              Change API Key
+            </button>
+          )}
+
           <form
             ref={formRef}
             onSubmit={handleSubmit}
-            className="p-8 rounded-2xl bg-card border border-border shadow-lg"
+            className="p-6 rounded-2xl bg-card border border-border shadow-lg"
             style={{ opacity: 0 }}
           >
-            <div className="space-y-6">
-              {/* Name Field */}
+            <div className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="name" className="flex items-center gap-2 text-foreground">
+                <Label htmlFor="name" className="flex items-center gap-2 text-foreground text-sm">
                   <User className="w-4 h-4 text-primary" />
                   Your Name
                 </Label>
@@ -147,17 +230,16 @@ const ContactSection = () => {
                   placeholder="John Doe"
                   value={formData.name}
                   onChange={handleChange}
-                  className={`h-12 ${errors.name ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  className={`h-11 ${errors.name ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   disabled={isSubmitting}
                 />
                 {errors.name && (
-                  <p className="text-sm text-destructive">{errors.name}</p>
+                  <p className="text-xs text-destructive">{errors.name}</p>
                 )}
               </div>
 
-              {/* Email Field */}
               <div className="space-y-2">
-                <Label htmlFor="email" className="flex items-center gap-2 text-foreground">
+                <Label htmlFor="email" className="flex items-center gap-2 text-foreground text-sm">
                   <Mail className="w-4 h-4 text-primary" />
                   Email Address
                 </Label>
@@ -168,17 +250,16 @@ const ContactSection = () => {
                   placeholder="john@example.com"
                   value={formData.email}
                   onChange={handleChange}
-                  className={`h-12 ${errors.email ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  className={`h-11 ${errors.email ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   disabled={isSubmitting}
                 />
                 {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email}</p>
+                  <p className="text-xs text-destructive">{errors.email}</p>
                 )}
               </div>
 
-              {/* Message Field */}
               <div className="space-y-2">
-                <Label htmlFor="message" className="flex items-center gap-2 text-foreground">
+                <Label htmlFor="message" className="flex items-center gap-2 text-foreground text-sm">
                   <MessageSquare className="w-4 h-4 text-primary" />
                   Your Message
                 </Label>
@@ -188,18 +269,17 @@ const ContactSection = () => {
                   placeholder="Tell us how we can help you..."
                   value={formData.message}
                   onChange={handleChange}
-                  className={`min-h-[150px] resize-none ${errors.message ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                  className={`min-h-[120px] resize-none ${errors.message ? "border-destructive focus-visible:ring-destructive" : ""}`}
                   disabled={isSubmitting}
                 />
                 {errors.message && (
-                  <p className="text-sm text-destructive">{errors.message}</p>
+                  <p className="text-xs text-destructive">{errors.message}</p>
                 )}
                 <p className="text-xs text-muted-foreground text-right">
-                  {formData.message.length}/1000 characters
+                  {formData.message.length}/1000
                 </p>
               </div>
 
-              {/* Submit Button */}
               <Button
                 type="submit"
                 variant="hero"
