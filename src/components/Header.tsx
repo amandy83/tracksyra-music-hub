@@ -48,11 +48,11 @@ const Header = () => {
   }, []);
 
   const navLinks = [
-    { name: "Features", href: "#features" },
-    { name: "Platforms", href: "#platforms" },
-    { name: "Testimonials", href: "#testimonials" },
-    { name: "Blog", href: "#blog" },
-    { name: "FAQ", href: "#faq" },
+    { name: "Features", href: "#features", isRoute: false },
+    { name: "Platforms", href: "#platforms", isRoute: false },
+    { name: "Testimonials", href: "#testimonials", isRoute: false },
+    { name: "Blog", href: "/blog", isRoute: true },
+    { name: "FAQ", href: "#faq", isRoute: false },
   ];
 
   return (
@@ -74,15 +74,27 @@ const Header = () => {
           {/* Desktop Navigation */}
           <nav ref={navRef} className="hidden lg:flex items-center gap-8">
             {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                className="text-foreground/80 hover:text-primary font-medium transition-colors relative group"
-                style={{ opacity: 0 }}
-              >
-                {link.name}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full" />
-              </a>
+              link.isRoute ? (
+                <Link
+                  key={link.name}
+                  to={link.href}
+                  className="text-foreground/80 hover:text-primary font-medium transition-colors relative group"
+                  style={{ opacity: 0 }}
+                >
+                  {link.name}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full" />
+                </Link>
+              ) : (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  className="text-foreground/80 hover:text-primary font-medium transition-colors relative group"
+                  style={{ opacity: 0 }}
+                >
+                  {link.name}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all duration-300 group-hover:w-full" />
+                </a>
+              )
             ))}
           </nav>
 
@@ -108,14 +120,25 @@ const Header = () => {
           <div className="lg:hidden py-6 border-t border-border bg-background/95 backdrop-blur-lg">
             <nav className="flex flex-col gap-4">
               {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  className="text-foreground/80 hover:text-primary font-medium py-2 transition-colors"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  {link.name}
-                </a>
+                link.isRoute ? (
+                  <Link
+                    key={link.name}
+                    to={link.href}
+                    className="text-foreground/80 hover:text-primary font-medium py-2 transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    className="text-foreground/80 hover:text-primary font-medium py-2 transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {link.name}
+                  </a>
+                )
               ))}
               <div className="flex flex-col gap-3 pt-4">
                 <Button variant="ghost" className="w-full">
