@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { gsap } from "@/hooks/useGSAP";
-import { Send, Mail, User, MessageSquare, Key } from "lucide-react";
+import { Send, Mail, User, MessageSquare } from "lucide-react";
 import { z } from "zod";
 
 const contactSchema = z.object({
@@ -16,13 +16,12 @@ const contactSchema = z.object({
 
 type ContactFormData = z.infer<typeof contactSchema>;
 
-const WEB3FORMS_KEY_STORAGE = "web3forms_access_key";
+// Paste your Web3Forms access key here
+const WEB3FORMS_ACCESS_KEY = "YOUR_ACCESS_KEY_HERE";
 
 const ContactSection = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [accessKey, setAccessKey] = useState(() => localStorage.getItem(WEB3FORMS_KEY_STORAGE) || "");
-  const [showKeyInput, setShowKeyInput] = useState(!localStorage.getItem(WEB3FORMS_KEY_STORAGE));
   const [formData, setFormData] = useState<ContactFormData>({
     name: "",
     email: "",
@@ -79,27 +78,15 @@ const ContactSection = () => {
     }
   };
 
-  const saveAccessKey = () => {
-    if (accessKey.trim()) {
-      localStorage.setItem(WEB3FORMS_KEY_STORAGE, accessKey.trim());
-      setShowKeyInput(false);
-      toast({
-        title: "API Key Saved",
-        description: "Your Web3Forms access key has been saved.",
-      });
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!accessKey.trim()) {
+    if (!WEB3FORMS_ACCESS_KEY || WEB3FORMS_ACCESS_KEY === "YOUR_ACCESS_KEY_HERE") {
       toast({
         title: "API Key Required",
-        description: "Please enter your Web3Forms access key first.",
+        description: "Please add your Web3Forms access key in the code.",
         variant: "destructive",
       });
-      setShowKeyInput(true);
       return;
     }
 
@@ -131,7 +118,7 @@ const ContactSection = () => {
           Accept: "application/json",
         },
         body: JSON.stringify({
-          access_key: accessKey,
+          access_key: WEB3FORMS_ACCESS_KEY,
           name: formData.name,
           email: formData.email,
           message: formData.message,
@@ -154,7 +141,7 @@ const ContactSection = () => {
     } catch {
       toast({
         title: "Error",
-        description: "Failed to send message. Please check your API key and try again.",
+        description: "Failed to send message. Please try again later.",
         variant: "destructive",
       });
     } finally {
@@ -176,41 +163,6 @@ const ContactSection = () => {
         </div>
 
         <div className="max-w-xl mx-auto">
-          {/* API Key Input */}
-          {showKeyInput && (
-            <div className="mb-6 p-4 rounded-xl bg-secondary/50 border border-border">
-              <Label className="flex items-center gap-2 text-foreground mb-2">
-                <Key className="w-4 h-4 text-primary" />
-                Web3Forms Access Key
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  type="password"
-                  placeholder="Paste your access key here"
-                  value={accessKey}
-                  onChange={(e) => setAccessKey(e.target.value)}
-                  className="flex-1"
-                />
-                <Button onClick={saveAccessKey} variant="outline">
-                  Save
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Get your free key at <a href="https://web3forms.com" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">web3forms.com</a>
-              </p>
-            </div>
-          )}
-
-          {!showKeyInput && (
-            <button
-              onClick={() => setShowKeyInput(true)}
-              className="text-xs text-muted-foreground hover:text-primary mb-4 flex items-center gap-1"
-            >
-              <Key className="w-3 h-3" />
-              Change API Key
-            </button>
-          )}
-
           <form
             ref={formRef}
             onSubmit={handleSubmit}
