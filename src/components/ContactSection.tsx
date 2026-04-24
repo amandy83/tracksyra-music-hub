@@ -56,21 +56,38 @@ const artistSchema = z.object({
 });
 
 const publisherSchema = z.object({
+  email: z.string().trim().email("Invalid email").max(255),
+  phone: z.string().trim().min(5, "Required").max(30),
   firstName: z.string().trim().min(1, "Required").max(100),
   lastName: z.string().trim().min(1, "Required").max(100),
-  email: z.string().trim().email("Invalid email").max(255),
-  company: z.string().trim().min(1, "Required").max(200),
   country: z.string().min(1, "Required"),
-  message: z.string().trim().min(10, "Min 10 characters").max(2000),
+  city: z.string().trim().min(1, "Required").max(100),
+  artistName: z.string().trim().min(1, "Required").max(150),
+  role: z.enum(["Artist", "Label", "Songwriter & Publisher"]),
+  genre: z.string().min(1, "Required"),
+  workingWithPublisher: z.enum(["Yes", "No"]),
+  catalogueSize: z.string().min(1, "Required"),
+  privateLink: z.string().url("Invalid URL").min(1, "Required"),
+  streamingPlatform: z.string().min(1, "Required"),
+  monthlyListeners: z.string().min(1, "Required"),
+  socials: z.string().optional(),
   privacyAccepted: z.literal(true, { errorMap: () => ({ message: "You must accept the privacy policy" }) }),
 });
 
 const legalSchema = z.object({
+  media: z.enum(["Audio & other", "Video"]),
   firstName: z.string().trim().min(1, "Required").max(100),
   lastName: z.string().trim().min(1, "Required").max(100),
+  legalRepresentative: z.string().optional(),
+  companyName: z.string().optional(),
+  country: z.string().min(1, "Required"),
+  city: z.string().trim().min(1, "Required").max(100),
   email: z.string().trim().email("Invalid email").max(255),
-  issueType: z.string().min(1, "Required"),
+  phone: z.string().trim().min(5, "Required").max(30),
   description: z.string().trim().min(20, "Min 20 characters").max(3000),
+  territories: z.string().trim().min(1, "Required").max(500),
+  goodFaith: z.literal(true, { errorMap: () => ({ message: "Required" }) }),
+  accuracyStatement: z.literal(true, { errorMap: () => ({ message: "Required" }) }),
   privacyAccepted: z.literal(true, { errorMap: () => ({ message: "You must accept the privacy policy" }) }),
 });
 
