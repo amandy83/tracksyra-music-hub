@@ -3,6 +3,7 @@ import { Rocket, Play, ArrowRight } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { gsap } from "@/hooks/useGSAP";
 import Interactive3DBackground from "./Interactive3DBackground";
+import Music3DScene from "./Music3DScene";
 
 const HeroSection = () => {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -61,6 +62,7 @@ const HeroSection = () => {
       className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 pb-12"
     >
       <Interactive3DBackground />
+      <Music3DScene />
 
       <div className="container mx-auto px-4 relative z-20">
         <div className="max-w-4xl mx-auto text-center">
