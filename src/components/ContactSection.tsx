@@ -56,21 +56,38 @@ const artistSchema = z.object({
 });
 
 const publisherSchema = z.object({
+  email: z.string().trim().email("Invalid email").max(255),
+  phone: z.string().trim().min(5, "Required").max(30),
   firstName: z.string().trim().min(1, "Required").max(100),
   lastName: z.string().trim().min(1, "Required").max(100),
-  email: z.string().trim().email("Invalid email").max(255),
-  company: z.string().trim().min(1, "Required").max(200),
   country: z.string().min(1, "Required"),
-  message: z.string().trim().min(10, "Min 10 characters").max(2000),
+  city: z.string().trim().min(1, "Required").max(100),
+  artistName: z.string().trim().min(1, "Required").max(150),
+  role: z.enum(["Artist", "Label", "Songwriter & Publisher"]),
+  genre: z.string().min(1, "Required"),
+  workingWithPublisher: z.enum(["Yes", "No"]),
+  catalogueSize: z.string().min(1, "Required"),
+  privateLink: z.string().url("Invalid URL").min(1, "Required"),
+  streamingPlatform: z.string().min(1, "Required"),
+  monthlyListeners: z.string().min(1, "Required"),
+  socials: z.string().optional(),
   privacyAccepted: z.literal(true, { errorMap: () => ({ message: "You must accept the privacy policy" }) }),
 });
 
 const legalSchema = z.object({
+  media: z.enum(["Audio & other", "Video"]),
   firstName: z.string().trim().min(1, "Required").max(100),
   lastName: z.string().trim().min(1, "Required").max(100),
+  legalRepresentative: z.string().optional(),
+  companyName: z.string().optional(),
+  country: z.string().min(1, "Required"),
+  city: z.string().trim().min(1, "Required").max(100),
   email: z.string().trim().email("Invalid email").max(255),
-  issueType: z.string().min(1, "Required"),
+  phone: z.string().trim().min(5, "Required").max(30),
   description: z.string().trim().min(20, "Min 20 characters").max(3000),
+  territories: z.string().trim().min(1, "Required").max(500),
+  goodFaith: z.literal(true, { errorMap: () => ({ message: "Required" }) }),
+  accuracyStatement: z.literal(true, { errorMap: () => ({ message: "Required" }) }),
   privacyAccepted: z.literal(true, { errorMap: () => ({ message: "You must accept the privacy policy" }) }),
 });
 
@@ -298,7 +315,12 @@ const ArtistForm = () => {
 const PublisherForm = () => {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
-  const [data, setData] = useState({ firstName: "", lastName: "", email: "", company: "", country: "", message: "", privacyAccepted: false });
+  const [data, setData] = useState({
+    email: "", phone: "", firstName: "", lastName: "", country: "", city: "",
+    artistName: "", role: "Artist", genre: "", workingWithPublisher: "No",
+    catalogueSize: "", privateLink: "", streamingPlatform: "Spotify",
+    monthlyListeners: "", socials: "", privacyAccepted: false,
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const update = (k: string, v: string | boolean) => {
@@ -317,6 +339,7 @@ const PublisherForm = () => {
       const fe: Record<string, string> = {};
       r.error.errors.forEach((er) => { fe[er.path[0] as string] = er.message; });
       setErrors(fe);
+      toast({ title: "Please fix errors", variant: "destructive" });
       return;
     }
     setSubmitting(true);
@@ -324,7 +347,7 @@ const PublisherForm = () => {
       const res = await submitToWeb3Forms({ form_type: "Publisher Inquiry", ...data });
       if (res.success) {
         toast({ title: "Submitted!", description: "We'll be in touch soon." });
-        setData({ firstName: "", lastName: "", email: "", company: "", country: "", message: "", privacyAccepted: false });
+        setData((p) => ({ ...p, email: "", phone: "", firstName: "", lastName: "", city: "", artistName: "", privateLink: "", socials: "", privacyAccepted: false }));
       } else throw new Error();
     } catch {
       toast({ title: "Error", variant: "destructive" });
@@ -332,30 +355,34 @@ const PublisherForm = () => {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-5">
+    <form onSubmit={submit} className="space-y-6">
+      <p className="text-sm text-muted-foreground bg-muted/40 p-4 rounded-lg border border-border">
+        This form is for those who would like to collaborate with TrackSyra Music Publishing. If you are interested in learning more about our publishing solutions, please fill out the form below.
+      </p>
+
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <Label htmlFor="p-fn">First name*</Label>
+          <Label htmlFor="p-email">Email*</Label>
+          <Input id="p-email" type="email" value={data.email} onChange={(e) => update("email", e.target.value)} className="mt-1" />
+          <FieldError msg={errors.email} />
+        </div>
+        <div>
+          <Label htmlFor="p-phone">Phone Number*</Label>
+          <Input id="p-phone" type="tel" placeholder="🇮🇳 +91" value={data.phone} onChange={(e) => update("phone", e.target.value)} className="mt-1" />
+          <FieldError msg={errors.phone} />
+        </div>
+        <div>
+          <Label htmlFor="p-fn">First Name*</Label>
           <Input id="p-fn" value={data.firstName} onChange={(e) => update("firstName", e.target.value)} className="mt-1" />
           <FieldError msg={errors.firstName} />
         </div>
         <div>
-          <Label htmlFor="p-ln">Last name*</Label>
+          <Label htmlFor="p-ln">Last Name*</Label>
           <Input id="p-ln" value={data.lastName} onChange={(e) => update("lastName", e.target.value)} className="mt-1" />
           <FieldError msg={errors.lastName} />
         </div>
         <div>
-          <Label htmlFor="p-em">Email*</Label>
-          <Input id="p-em" type="email" value={data.email} onChange={(e) => update("email", e.target.value)} className="mt-1" />
-          <FieldError msg={errors.email} />
-        </div>
-        <div>
-          <Label htmlFor="p-co">Company / Publisher Name*</Label>
-          <Input id="p-co" value={data.company} onChange={(e) => update("company", e.target.value)} className="mt-1" />
-          <FieldError msg={errors.company} />
-        </div>
-        <div className="sm:col-span-2">
-          <Label>Country*</Label>
+          <Label>Country/Region*</Label>
           <Select value={data.country} onValueChange={(v) => update("country", v)}>
             <SelectTrigger className="mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
             <SelectContent className="max-h-72 bg-background">
@@ -364,12 +391,90 @@ const PublisherForm = () => {
           </Select>
           <FieldError msg={errors.country} />
         </div>
+        <div>
+          <Label htmlFor="p-city">City*</Label>
+          <Input id="p-city" value={data.city} onChange={(e) => update("city", e.target.value)} className="mt-1" />
+          <FieldError msg={errors.city} />
+        </div>
+        <div className="sm:col-span-2">
+          <Label htmlFor="p-artist">Your Name (Artist, Band, Label)*</Label>
+          <Input id="p-artist" value={data.artistName} onChange={(e) => update("artistName", e.target.value)} className="mt-1" />
+          <FieldError msg={errors.artistName} />
+        </div>
+        <div className="sm:col-span-2">
+          <Label className="mb-2 block">You are*</Label>
+          <RadioGroup value={data.role} onValueChange={(v) => update("role", v)} className="flex flex-wrap gap-4">
+            {["Artist", "Label", "Songwriter & Publisher"].map((r) => (
+              <div key={r} className="flex items-center gap-2">
+                <RadioGroupItem value={r} id={`p-role-${r}`} />
+                <Label htmlFor={`p-role-${r}`} className="cursor-pointer">{r}</Label>
+              </div>
+            ))}
+          </RadioGroup>
+        </div>
+        <div>
+          <Label>Main Music Genre*</Label>
+          <Select value={data.genre} onValueChange={(v) => update("genre", v)}>
+            <SelectTrigger className="mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
+            <SelectContent className="max-h-72 bg-background">
+              {GENRES.map((g) => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <FieldError msg={errors.genre} />
+        </div>
+        <div>
+          <Label>Currently working with a publisher?*</Label>
+          <Select value={data.workingWithPublisher} onValueChange={(v) => update("workingWithPublisher", v)}>
+            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent className="bg-background">
+              <SelectItem value="Yes">Yes</SelectItem>
+              <SelectItem value="No">No</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>Size of Catalogue*</Label>
+          <Select value={data.catalogueSize} onValueChange={(v) => update("catalogueSize", v)}>
+            <SelectTrigger className="mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
+            <SelectContent className="bg-background">
+              {["1 – 10 songs", "11 – 50 songs", "51 – 200 songs", "201 – 500 songs", "> 500 songs"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <FieldError msg={errors.catalogueSize} />
+        </div>
+        <div>
+          <Label htmlFor="p-link">Private link for your next release/project*</Label>
+          <Input id="p-link" type="url" placeholder="https://..." value={data.privateLink} onChange={(e) => update("privateLink", e.target.value)} className="mt-1" />
+          <FieldError msg={errors.privateLink} />
+        </div>
+        <div>
+          <Label>Streaming Platform</Label>
+          <Select value={data.streamingPlatform} onValueChange={(v) => update("streamingPlatform", v)}>
+            <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+            <SelectContent className="bg-background">
+              {["Spotify", "Apple Music", "YouTube Music", "JioSaavn", "Gaana", "Other"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="sm:col-span-2">
+          <Label>Total Monthly Listeners on Key Streaming Platforms*</Label>
+          <Select value={data.monthlyListeners} onValueChange={(v) => update("monthlyListeners", v)}>
+            <SelectTrigger className="mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
+            <SelectContent className="bg-background">
+              {["0 – 1K", "1K – 10K", "10K – 100K", "100K – 1M", "> 1M"].map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground mt-1">
+            Please indicate your actual monthly listeners. Any demand with erroneous information will be discarded.
+          </p>
+          <FieldError msg={errors.monthlyListeners} />
+        </div>
+        <div className="sm:col-span-2">
+          <Label htmlFor="p-socials">Your Social Media Presence (Instagram, Facebook, TikTok, YouTube, VK)</Label>
+          <Textarea id="p-socials" placeholder="Instagram: @handle, YouTube: channel link, etc." value={data.socials} onChange={(e) => update("socials", e.target.value)} className="mt-1 min-h-[80px]" />
+        </div>
       </div>
-      <div>
-        <Label htmlFor="p-msg">Tell us about your catalog & needs*</Label>
-        <Textarea id="p-msg" value={data.message} onChange={(e) => update("message", e.target.value)} className="mt-1 min-h-[120px]" />
-        <FieldError msg={errors.message} />
-      </div>
+
       <div className="flex items-start gap-3">
         <Checkbox id="privacy-pub" checked={data.privacyAccepted} onCheckedChange={(v) => update("privacyAccepted", !!v)} />
         <Label htmlFor="privacy-pub" className="text-sm leading-relaxed cursor-pointer">
@@ -377,6 +482,7 @@ const PublisherForm = () => {
         </Label>
       </div>
       <FieldError msg={errors.privacyAccepted} />
+
       <Button type="submit" variant="hero" size="xl" className="w-full" disabled={submitting}>
         {submitting ? "Sending..." : (<>Submit <Send className="w-5 h-5" /></>)}
       </Button>
@@ -388,7 +494,13 @@ const PublisherForm = () => {
 const LegalForm = () => {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
-  const [data, setData] = useState({ firstName: "", lastName: "", email: "", issueType: "", description: "", privacyAccepted: false });
+  const [data, setData] = useState({
+    media: "Audio & other",
+    firstName: "", lastName: "", legalRepresentative: "", companyName: "",
+    country: "", city: "", email: "", phone: "",
+    description: "", territories: "",
+    goodFaith: false, accuracyStatement: false, privacyAccepted: false,
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const update = (k: string, v: string | boolean) => {
@@ -407,14 +519,15 @@ const LegalForm = () => {
       const fe: Record<string, string> = {};
       r.error.errors.forEach((er) => { fe[er.path[0] as string] = er.message; });
       setErrors(fe);
+      toast({ title: "Please fix errors", variant: "destructive" });
       return;
     }
     setSubmitting(true);
     try {
-      const res = await submitToWeb3Forms({ form_type: "Legal Issue", ...data });
+      const res = await submitToWeb3Forms({ form_type: "Legal Issue / Copyright Claim", ...data });
       if (res.success) {
         toast({ title: "Submitted!", description: "Our legal team will review and respond." });
-        setData({ firstName: "", lastName: "", email: "", issueType: "", description: "", privacyAccepted: false });
+        setData((p) => ({ ...p, firstName: "", lastName: "", legalRepresentative: "", companyName: "", city: "", email: "", phone: "", description: "", territories: "", goodFaith: false, accuracyStatement: false, privacyAccepted: false }));
       } else throw new Error();
     } catch {
       toast({ title: "Error", variant: "destructive" });
@@ -422,52 +535,121 @@ const LegalForm = () => {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-5">
-      <div className="grid sm:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="l-fn">First name*</Label>
-          <Input id="l-fn" value={data.firstName} onChange={(e) => update("firstName", e.target.value)} className="mt-1" />
-          <FieldError msg={errors.firstName} />
-        </div>
-        <div>
-          <Label htmlFor="l-ln">Last name*</Label>
-          <Input id="l-ln" value={data.lastName} onChange={(e) => update("lastName", e.target.value)} className="mt-1" />
-          <FieldError msg={errors.lastName} />
-        </div>
-        <div className="sm:col-span-2">
-          <Label htmlFor="l-em">Email*</Label>
-          <Input id="l-em" type="email" value={data.email} onChange={(e) => update("email", e.target.value)} className="mt-1" />
-          <FieldError msg={errors.email} />
-        </div>
-        <div className="sm:col-span-2">
-          <Label>Type of legal issue*</Label>
-          <Select value={data.issueType} onValueChange={(v) => update("issueType", v)}>
-            <SelectTrigger className="mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
-            <SelectContent className="bg-background">
-              {["Copyright Infringement", "Royalty Dispute", "Contract Question", "Trademark", "DMCA Takedown", "Other"].map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <FieldError msg={errors.issueType} />
-        </div>
-      </div>
+    <form onSubmit={submit} className="space-y-8">
+      {/* Step 01 */}
       <div>
-        <Label htmlFor="l-desc">Describe the issue*</Label>
-        <Textarea id="l-desc" value={data.description} onChange={(e) => update("description", e.target.value)} className="mt-1 min-h-[140px]" />
-        <FieldError msg={errors.description} />
+        <StepBadge n="01" label="Your Information" />
+        <div className="space-y-5">
+          <div>
+            <Label className="mb-2 block">Media*</Label>
+            <RadioGroup value={data.media} onValueChange={(v) => update("media", v)} className="flex flex-wrap gap-4">
+              {["Audio & other", "Video"].map((m) => (
+                <div key={m} className="flex items-center gap-2">
+                  <RadioGroupItem value={m} id={`media-${m}`} />
+                  <Label htmlFor={`media-${m}`} className="cursor-pointer">{m}</Label>
+                </div>
+              ))}
+            </RadioGroup>
+          </div>
+
+          <div className="grid sm:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="l-fn">First name*</Label>
+              <Input id="l-fn" value={data.firstName} onChange={(e) => update("firstName", e.target.value)} className="mt-1" />
+              <FieldError msg={errors.firstName} />
+            </div>
+            <div>
+              <Label htmlFor="l-ln">Last name*</Label>
+              <Input id="l-ln" value={data.lastName} onChange={(e) => update("lastName", e.target.value)} className="mt-1" />
+              <FieldError msg={errors.lastName} />
+            </div>
+            <div>
+              <Label htmlFor="l-rep">Legal representative</Label>
+              <Input id="l-rep" value={data.legalRepresentative} onChange={(e) => update("legalRepresentative", e.target.value)} className="mt-1" />
+            </div>
+            <div>
+              <Label htmlFor="l-comp">Company name</Label>
+              <Input id="l-comp" value={data.companyName} onChange={(e) => update("companyName", e.target.value)} className="mt-1" />
+            </div>
+            <div>
+              <Label>Country*</Label>
+              <Select value={data.country} onValueChange={(v) => update("country", v)}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent className="max-h-72 bg-background">
+                  {COUNTRIES.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+              <FieldError msg={errors.country} />
+            </div>
+            <div>
+              <Label htmlFor="l-city">City*</Label>
+              <Input id="l-city" value={data.city} onChange={(e) => update("city", e.target.value)} className="mt-1" />
+              <FieldError msg={errors.city} />
+            </div>
+            <div>
+              <Label htmlFor="l-em">Email*</Label>
+              <Input id="l-em" type="email" value={data.email} onChange={(e) => update("email", e.target.value)} className="mt-1" />
+              <FieldError msg={errors.email} />
+            </div>
+            <div>
+              <Label htmlFor="l-ph">Phone*</Label>
+              <Input id="l-ph" type="tel" value={data.phone} onChange={(e) => update("phone", e.target.value)} className="mt-1" />
+              <FieldError msg={errors.phone} />
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* Step 02 */}
+      <div>
+        <StepBadge n="02" label="Copyright & Legal Issue" />
+        <div className="space-y-5">
+          <div>
+            <Label htmlFor="l-desc">Description of the copyright and legal issue*</Label>
+            <Textarea id="l-desc" value={data.description} onChange={(e) => update("description", e.target.value)} className="mt-1 min-h-[140px]" />
+            <FieldError msg={errors.description} />
+          </div>
+          <div>
+            <Label htmlFor="l-terr">Territories where copyright problems exist*</Label>
+            <Textarea id="l-terr" placeholder="e.g. India, United States, Worldwide..." value={data.territories} onChange={(e) => update("territories", e.target.value)} className="mt-1 min-h-[80px]" />
+            <FieldError msg={errors.territories} />
+          </div>
+
+          <div className="space-y-4 bg-muted/40 p-4 rounded-lg border border-border">
+            <div className="flex items-start gap-3">
+              <Checkbox id="goodFaith" checked={data.goodFaith} onCheckedChange={(v) => update("goodFaith", !!v)} className="mt-0.5" />
+              <Label htmlFor="goodFaith" className="text-sm leading-relaxed cursor-pointer">
+                I have a good faith belief that the use of the material complained of is not authorized by the copyright owner, its agent, or the law*
+              </Label>
+            </div>
+            <FieldError msg={errors.goodFaith} />
+
+            <div className="flex items-start gap-3">
+              <Checkbox id="accuracy" checked={data.accuracyStatement} onCheckedChange={(v) => update("accuracyStatement", !!v)} className="mt-0.5" />
+              <Label htmlFor="accuracy" className="text-sm leading-relaxed cursor-pointer">
+                I state that the information in the claim is accurate, and under penalty of perjury, that the complaining party is the copyright owner or authorized to act on behalf of the owner of an exclusive right under copyright that is allegedly infringed*
+              </Label>
+            </div>
+            <FieldError msg={errors.accuracyStatement} />
+          </div>
+        </div>
+      </div>
+
       <div className="flex items-start gap-3">
         <Checkbox id="privacy-legal" checked={data.privacyAccepted} onCheckedChange={(v) => update("privacyAccepted", !!v)} />
         <Label htmlFor="privacy-legal" className="text-sm leading-relaxed cursor-pointer">
-          I declare that I have read TrackSyra's Privacy Protection Policy*
+          I acknowledge that I have read TrackSyra's Privacy Policy*
         </Label>
       </div>
       <FieldError msg={errors.privacyAccepted} />
+
       <Button type="submit" variant="hero" size="xl" className="w-full" disabled={submitting}>
         {submitting ? "Sending..." : (<>Submit <Send className="w-5 h-5" /></>)}
       </Button>
     </form>
   );
 };
+
 
 /* ---------- MAIN SECTION ---------- */
 const ContactSection = () => {
