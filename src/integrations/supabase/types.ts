@@ -14,7 +14,114 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          artist_name: string | null
+          avatar_url: string | null
+          bio: string | null
+          country: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          main_genre: string | null
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          artist_name?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          country?: string | null
+          created_at?: string
+          full_name?: string | null
+          id: string
+          main_genre?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          artist_name?: string | null
+          avatar_url?: string | null
+          bio?: string | null
+          country?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          main_genre?: string | null
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      songs: {
+        Row: {
+          audio_url: string | null
+          copyright_info: string | null
+          cover_art_url: string | null
+          created_at: string
+          explicit: boolean
+          featured_artists: string | null
+          genre: string | null
+          id: string
+          isrc: string | null
+          language: string | null
+          lyrics: string | null
+          platforms: string[]
+          primary_artist: string
+          release_date: string | null
+          songwriter_credits: string | null
+          status: string
+          title: string
+          upc: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          audio_url?: string | null
+          copyright_info?: string | null
+          cover_art_url?: string | null
+          created_at?: string
+          explicit?: boolean
+          featured_artists?: string | null
+          genre?: string | null
+          id?: string
+          isrc?: string | null
+          language?: string | null
+          lyrics?: string | null
+          platforms?: string[]
+          primary_artist: string
+          release_date?: string | null
+          songwriter_credits?: string | null
+          status?: string
+          title: string
+          upc?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          audio_url?: string | null
+          copyright_info?: string | null
+          cover_art_url?: string | null
+          created_at?: string
+          explicit?: boolean
+          featured_artists?: string | null
+          genre?: string | null
+          id?: string
+          isrc?: string | null
+          language?: string | null
+          lyrics?: string | null
+          platforms?: string[]
+          primary_artist?: string
+          release_date?: string | null
+          songwriter_credits?: string | null
+          status?: string
+          title?: string
+          upc?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
