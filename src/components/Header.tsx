@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
 import Logo from "./Logo";
 import { gsap } from "@/hooks/useGSAP";
+import { useAuth } from "@/hooks/useAuth";
 
 const Header = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const headerRef = useRef<HTMLElement>(null);
@@ -100,10 +103,18 @@ const Header = () => {
 
           {/* Desktop CTA Buttons */}
           <div ref={buttonsRef} className="hidden lg:flex items-center gap-3">
-            <Button variant="ghost" style={{ opacity: 0 }}>Log In</Button>
-            <Button variant="hero" size="default" style={{ opacity: 0 }}>
-              Get Started
-            </Button>
+            {user ? (
+              <Button variant="hero" size="default" style={{ opacity: 0 }} onClick={() => navigate("/dashboard")}>
+                Dashboard
+              </Button>
+            ) : (
+              <>
+                <Button variant="ghost" style={{ opacity: 0 }} onClick={() => navigate("/auth")}>Log In</Button>
+                <Button variant="hero" size="default" style={{ opacity: 0 }} onClick={() => navigate("/auth")}>
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -141,12 +152,20 @@ const Header = () => {
                 )
               ))}
               <div className="flex flex-col gap-3 pt-4">
-                <Button variant="ghost" className="w-full">
-                  Log In
-                </Button>
-                <Button variant="hero" className="w-full">
-                  Get Started
-                </Button>
+                {user ? (
+                  <Button variant="hero" className="w-full" onClick={() => { navigate("/dashboard"); setIsMobileMenuOpen(false); }}>
+                    Dashboard
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="ghost" className="w-full" onClick={() => { navigate("/auth"); setIsMobileMenuOpen(false); }}>
+                      Log In
+                    </Button>
+                    <Button variant="hero" className="w-full" onClick={() => { navigate("/auth"); setIsMobileMenuOpen(false); }}>
+                      Get Started
+                    </Button>
+                  </>
+                )}
               </div>
             </nav>
           </div>
