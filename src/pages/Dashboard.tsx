@@ -293,6 +293,13 @@ const Dashboard = () => {
 
       <UploadSongDialog open={openUpload} onOpenChange={setOpenUpload} onSuccess={loadAll} />
       <PlaylistPitchDialog songs={songOpts} open={openPitch} onOpenChange={setOpenPitch} onSuccess={loadAll} />
+      <PlaylistPitchDialog
+        songs={songOpts}
+        open={!!editPitch}
+        onOpenChange={(v) => !v && setEditPitch(null)}
+        onSuccess={loadAll}
+        existing={editPitch}
+      />
       <AdCampaignDialog songs={songOpts} open={openAd} onOpenChange={setOpenAd} onSuccess={loadAll} />
       <CanvasUploadDialog songs={songOpts} open={openCanvas} onOpenChange={setOpenCanvas} onSuccess={loadAll} />
       <EditSongDialog song={editSong} open={!!editSong} onOpenChange={(v) => !v && setEditSong(null)} onSuccess={loadAll} />
