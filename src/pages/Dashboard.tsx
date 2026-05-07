@@ -203,18 +203,39 @@ const Dashboard = () => {
               <Card className="p-8 text-center border-dashed"><ListMusic className="w-12 h-12 mx-auto text-muted-foreground mb-4" /><p className="text-muted-foreground">No pitches yet. Submit a genuine, story-driven pitch to get featured on editorial playlists.</p></Card>
             ) : (
               <div className="space-y-2">
-                {pitches.map((p) => (
-                  <Card key={p.id} className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <p className="font-semibold">{p.songs?.title} → {p.target_playlist}</p>
-                        <p className="text-sm text-muted-foreground">{p.platform} • {p.genre || "—"} • {p.mood || "—"}</p>
-                        <p className="text-sm mt-2 line-clamp-2">{p.pitch_story}</p>
+                {pitches.map((p) => {
+                  const statusColor =
+                    p.status === "approved"
+                      ? "bg-green-100 text-green-800 border-green-300"
+                      : p.status === "rejected"
+                      ? "bg-red-100 text-red-800 border-red-300"
+                      : "bg-amber-100 text-amber-800 border-amber-300";
+                  return (
+                    <Card key={p.id} className="p-4">
+                      <div className="flex justify-between items-start gap-3">
+                        <div className="flex-1">
+                          <p className="font-semibold">{p.songs?.title} → {p.target_playlist}</p>
+                          <p className="text-sm text-muted-foreground">{p.platform} • {p.genre || "—"} • {p.mood || "—"}</p>
+                          <p className="text-sm mt-2 line-clamp-2">{p.pitch_story}</p>
+                          {p.admin_notes && (
+                            <div className="mt-2 rounded-md bg-muted p-2 text-xs">
+                              <span className="font-semibold">Editor's note: </span>{p.admin_notes}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <Badge className={`capitalize border ${statusColor}`} variant="outline">{p.status}</Badge>
+                          {p.status !== "approved" && (
+                            <Button size="sm" variant="outline" onClick={() => setEditPitch(p)}>
+                              <Pencil className="w-3 h-3 mr-1" />
+                              {p.status === "rejected" ? "Edit & Resubmit" : "Edit"}
+                            </Button>
+                          )}
+                        </div>
                       </div>
-                      <Badge variant="secondary" className="capitalize">{p.status}</Badge>
-                    </div>
-                  </Card>
-                ))}
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </TabsContent>
