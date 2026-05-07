@@ -49,7 +49,10 @@ const AdCampaignDialog = ({ songs, open, onOpenChange, onSuccess }: Props) => {
     setBusy(true);
     const { error } = await supabase.from("ad_campaigns").insert({
       user_id: user.id,
-      ...parsed.data,
+      song_id: parsed.data.song_id,
+      campaign_name: parsed.data.campaign_name,
+      budget_inr: parsed.data.budget_inr,
+      platform: parsed.data.platform,
       target_countries: parsed.data.target_countries || null,
       target_age: parsed.data.target_age || null,
       target_genre: parsed.data.target_genre || null,

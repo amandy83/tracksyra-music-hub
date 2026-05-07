@@ -47,7 +47,10 @@ const PlaylistPitchDialog = ({ songs, open, onOpenChange, onSuccess }: Props) =>
     setBusy(true);
     const { error } = await supabase.from("playlist_pitches").insert({
       user_id: user.id,
-      ...parsed.data,
+      song_id: parsed.data.song_id,
+      target_playlist: parsed.data.target_playlist,
+      platform: parsed.data.platform,
+      pitch_story: parsed.data.pitch_story,
       genre: parsed.data.genre || null,
       mood: parsed.data.mood || null,
       target_audience: parsed.data.target_audience || null,
