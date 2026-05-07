@@ -31,6 +31,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [openUpload, setOpenUpload] = useState(false);
   const [openPitch, setOpenPitch] = useState(false);
+  const [editPitch, setEditPitch] = useState<Pitch | null>(null);
   const [openAd, setOpenAd] = useState(false);
   const [openCanvas, setOpenCanvas] = useState(false);
   const [editSong, setEditSong] = useState<Song | null>(null);
