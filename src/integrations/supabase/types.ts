@@ -78,6 +78,7 @@ export type Database = {
       }
       playlist_pitches: {
         Row: {
+          admin_notes: string | null
           created_at: string
           genre: string | null
           id: string
@@ -93,6 +94,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          admin_notes?: string | null
           created_at?: string
           genre?: string | null
           id?: string
@@ -108,6 +110,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          admin_notes?: string | null
           created_at?: string
           genre?: string | null
           id?: string

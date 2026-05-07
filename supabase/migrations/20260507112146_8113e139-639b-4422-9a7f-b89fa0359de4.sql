@@ -1,0 +1,1 @@
+ALTER TABLE public.playlist_pitches ADD COLUMN IF NOT EXISTS admin_notes text;
