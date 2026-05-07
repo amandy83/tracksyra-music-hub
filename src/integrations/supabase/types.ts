@@ -14,6 +14,124 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_campaigns: {
+        Row: {
+          budget_inr: number
+          campaign_name: string
+          created_at: string
+          end_date: string | null
+          id: string
+          notes: string | null
+          platform: string
+          song_id: string
+          start_date: string | null
+          status: string
+          target_age: string | null
+          target_countries: string | null
+          target_genre: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          budget_inr: number
+          campaign_name: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          platform?: string
+          song_id: string
+          start_date?: string | null
+          status?: string
+          target_age?: string | null
+          target_countries?: string | null
+          target_genre?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          budget_inr?: number
+          campaign_name?: string
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          notes?: string | null
+          platform?: string
+          song_id?: string
+          start_date?: string | null
+          status?: string
+          target_age?: string | null
+          target_countries?: string | null
+          target_genre?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_campaigns_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      playlist_pitches: {
+        Row: {
+          created_at: string
+          genre: string | null
+          id: string
+          mood: string | null
+          pitch_story: string
+          platform: string
+          similar_artists: string | null
+          song_id: string
+          status: string
+          target_audience: string | null
+          target_playlist: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          genre?: string | null
+          id?: string
+          mood?: string | null
+          pitch_story: string
+          platform?: string
+          similar_artists?: string | null
+          song_id: string
+          status?: string
+          target_audience?: string | null
+          target_playlist: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          genre?: string | null
+          id?: string
+          mood?: string | null
+          pitch_story?: string
+          platform?: string
+          similar_artists?: string | null
+          song_id?: string
+          status?: string
+          target_audience?: string | null
+          target_playlist?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "playlist_pitches_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           artist_name: string | null
@@ -53,9 +171,98 @@ export type Database = {
         }
         Relationships: []
       }
+      royalties: {
+        Row: {
+          created_at: string
+          id: string
+          payout_status: string
+          period: string
+          platform: string
+          revenue_inr: number
+          song_id: string
+          streams: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          payout_status?: string
+          period: string
+          platform: string
+          revenue_inr?: number
+          song_id: string
+          streams?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          payout_status?: string
+          period?: string
+          platform?: string
+          revenue_inr?: number
+          song_id?: string
+          streams?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "royalties_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      song_analytics: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          listeners: number
+          platform: string
+          saves: number
+          song_id: string
+          streams: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          date?: string
+          id?: string
+          listeners?: number
+          platform: string
+          saves?: number
+          song_id: string
+          streams?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          listeners?: number
+          platform?: string
+          saves?: number
+          song_id?: string
+          streams?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "song_analytics_song_id_fkey"
+            columns: ["song_id"]
+            isOneToOne: false
+            referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       songs: {
         Row: {
           audio_url: string | null
+          canvas_video_url: string | null
           copyright_info: string | null
           cover_art_url: string | null
           created_at: string
@@ -78,6 +285,7 @@ export type Database = {
         }
         Insert: {
           audio_url?: string | null
+          canvas_video_url?: string | null
           copyright_info?: string | null
           cover_art_url?: string | null
           created_at?: string
@@ -100,6 +308,7 @@ export type Database = {
         }
         Update: {
           audio_url?: string | null
+          canvas_video_url?: string | null
           copyright_info?: string | null
           cover_art_url?: string | null
           created_at?: string
