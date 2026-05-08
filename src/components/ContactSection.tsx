@@ -503,10 +503,6 @@ const LegalForm = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!WEB3FORMS_ACCESS_KEY || WEB3FORMS_ACCESS_KEY === "YOUR_ACCESS_KEY_HERE") {
-      toast({ title: "API Key Required", description: "Please add your Web3Forms access key in the code.", variant: "destructive" });
-      return;
-    }
     const r = legalSchema.safeParse(data);
     if (!r.success) {
       const fe: Record<string, string> = {};
@@ -517,7 +513,7 @@ const LegalForm = () => {
     }
     setSubmitting(true);
     try {
-      const res = await submitToWeb3Forms({ form_type: "Legal Issue / Copyright Claim", ...data });
+      const res = await submitToBackend("Legal Issue / Copyright Claim", data);
       if (res.success) {
         toast({ title: "Submitted!", description: "Our legal team will review and respond." });
         setData((p) => ({ ...p, firstName: "", lastName: "", legalRepresentative: "", companyName: "", city: "", email: "", phone: "", description: "", territories: "", goodFaith: false, accuracyStatement: false, privacyAccepted: false }));
