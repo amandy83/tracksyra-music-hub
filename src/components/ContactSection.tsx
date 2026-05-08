@@ -91,13 +91,15 @@ const legalSchema = z.object({
 });
 
 /* ---------- Helpers ---------- */
-const submitToWeb3Forms = async (payload: Record<string, unknown>) => {
-  const res = await fetch("https://api.web3forms.com/submit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ access_key: WEB3FORMS_ACCESS_KEY, from_name: "TrackSyra Contact Form", ...payload }),
+const submitToBackend = async (formType: string, payload: Record<string, any>) => {
+  const { error } = await supabase.from("form_submissions").insert({
+    form_type: formType,
+    email: payload.email || null,
+    name: [payload.firstName, payload.lastName].filter(Boolean).join(" ") || payload.artistName || null,
+    phone: payload.phone || null,
+    data: payload,
   });
-  return res.json();
+  return { success: !error, error };
 };
 
 const FieldError = ({ msg }: { msg?: string }) =>
@@ -132,10 +134,6 @@ const ArtistForm = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!WEB3FORMS_ACCESS_KEY || WEB3FORMS_ACCESS_KEY === "YOUR_ACCESS_KEY_HERE") {
-      toast({ title: "API Key Required", description: "Please add your Web3Forms access key in the code.", variant: "destructive" });
-      return;
-    }
     const result = artistSchema.safeParse(data);
     if (!result.success) {
       const fe: Record<string, string> = {};
@@ -146,9 +144,9 @@ const ArtistForm = () => {
     }
     setSubmitting(true);
     try {
-      const res = await submitToWeb3Forms({ form_type: "Artist/Label/Songwriter", ...data });
+      const res = await submitToBackend("Artist/Label/Songwriter", data);
       if (res.success) {
-        toast({ title: "Submitted!", description: "We'll get back to you soon." });
+        toast({ title: "Submitted!", description: "Our team will review your submission." });
         setData((p) => ({ ...p, firstName: "", lastName: "", email: "", phone: "", city: "", artistName: "", privateLink: "", socials: "", privacyAccepted: false }));
       } else throw new Error();
     } catch {
