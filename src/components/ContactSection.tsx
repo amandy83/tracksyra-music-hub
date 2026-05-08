@@ -18,8 +18,7 @@ import { gsap } from "@/hooks/useGSAP";
 import { Send, Music2, BookOpen, Scale } from "lucide-react";
 import { z } from "zod";
 
-// Paste your Web3Forms access key here
-const WEB3FORMS_ACCESS_KEY = "YOUR_ACCESS_KEY_HERE";
+import { supabase } from "@/integrations/supabase/client";
 
 const COUNTRIES = [
   "Afghanistan","Albania","Algeria","Andorra","Angola","Antarctica","Antigua & Barbuda","Argentina","Armenia","Aruba","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bermuda","Bhutan","Bolivia","Bosnia & Herzegovina","Botswana","Bouvet Island","Brazil","British Indian Ocean Territory","Brunei","Bulgaria","Burkina Faso","Burundi","Cambodia","Cameroon","Canada","Canary Islands","Cape Verde","Caribbean Netherlands","Cayman Islands","Central African Republic","Ceuta & Melilla","Chad","Chile","China","Christmas Island","Clipperton Island","Cocos (Keeling) Islands","Colombia","Comoros","Congo – Brazzaville","Congo – Kinshasa","Cook Islands","Costa Rica","Croatia","Curaçao","Cyprus","Czech Republic","Côte d'Ivoire","Denmark","Diego Garcia","Djibouti","Dominican Republic","Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Falkland Islands","Faroe Islands","Finland","France","French Guiana","French Polynesia","French Southern Territories","Gabon","Gambia","Georgia","Germany","Ghana","Gibraltar","Greece","Greenland","Grenada","Guadeloupe","Guatemala","Guernsey","Guinea","Guinea-Bissau","Guyana","Haiti","Heard & McDonald Islands","Honduras","Hong Kong","Hungary","Iceland","India","Indonesia","Iraq","Ireland","Isle of Man","Israel","Italy","Jamaica","Japan","Jersey","Jordan","Kazakhstan","Kenya","Kiribati","Kosovo","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg","Macao","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Martinique","Mauritania","Mauritius","Mayotte","Mexico","Micronesia","Moldova, Republic of","Monaco","Mongolia","Montenegro","Montserrat","Morocco","Mozambique","Myanmar (Burma)","Namibia","Nauru","Nepal","Netherlands","Netherlands Antilles","New Caledonia","New Zealand","Nicaragua","Niger","Nigeria","Niue","Norfolk Island","Northern Mariana Islands","North Macedonia","Norway","Oman","Outlying Oceania","Pakistan","Palau","Palestinian Territories","Papua New Guinea","Paraguay","Peru","Philippines","Pitcairn Islands","Poland","Portugal","Puerto Rico","Qatar","Romania","Russia","Rwanda","Réunion","San Marino","Saudi Arabia","Senegal","Serbia","Sierra Leone","Singapore","Sint Maarten","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Georgia & South Sandwich Islands","South Korea","South Sudan","Spain","Sri Lanka","Saint Barthélemy","Saint Helena, Ascension and Tristan Da Cunha","Saint Kitts & Nevis","Saint Lucia","Saint Martin","Saint Pierre & Miquelon","Saint Vincent & The Grenadines","Sudan","Suriname","Svalbard & Jan Mayen","Sweden","Switzerland","São Tomé & Príncipe","Taiwan","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tokelau","Tonga","Trinidad & Tobago","Tristan da Cunha","Tunisia","Turkey","Turkmenistan","Turks & Caicos Islands","Tuvalu","U.S. Outlying Islands","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Vatican City","Venezuela","Vietnam","Wallis & Futuna","Western Sahara","Yemen","Zambia","Zimbabwe","Åland Islands"
@@ -92,13 +91,15 @@ const legalSchema = z.object({
 });
 
 /* ---------- Helpers ---------- */
-const submitToWeb3Forms = async (payload: Record<string, unknown>) => {
-  const res = await fetch("https://api.web3forms.com/submit", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ access_key: WEB3FORMS_ACCESS_KEY, from_name: "TrackSyra Contact Form", ...payload }),
+const submitToBackend = async (formType: string, payload: Record<string, any>) => {
+  const { error } = await supabase.from("form_submissions").insert({
+    form_type: formType,
+    email: payload.email || null,
+    name: [payload.firstName, payload.lastName].filter(Boolean).join(" ") || payload.artistName || null,
+    phone: payload.phone || null,
+    data: payload,
   });
-  return res.json();
+  return { success: !error, error };
 };
 
 const FieldError = ({ msg }: { msg?: string }) =>
@@ -133,10 +134,6 @@ const ArtistForm = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!WEB3FORMS_ACCESS_KEY || WEB3FORMS_ACCESS_KEY === "YOUR_ACCESS_KEY_HERE") {
-      toast({ title: "API Key Required", description: "Please add your Web3Forms access key in the code.", variant: "destructive" });
-      return;
-    }
     const result = artistSchema.safeParse(data);
     if (!result.success) {
       const fe: Record<string, string> = {};
@@ -147,9 +144,9 @@ const ArtistForm = () => {
     }
     setSubmitting(true);
     try {
-      const res = await submitToWeb3Forms({ form_type: "Artist/Label/Songwriter", ...data });
+      const res = await submitToBackend("Artist/Label/Songwriter", data);
       if (res.success) {
-        toast({ title: "Submitted!", description: "We'll get back to you soon." });
+        toast({ title: "Submitted!", description: "Our team will review your submission." });
         setData((p) => ({ ...p, firstName: "", lastName: "", email: "", phone: "", city: "", artistName: "", privateLink: "", socials: "", privacyAccepted: false }));
       } else throw new Error();
     } catch {
@@ -330,10 +327,6 @@ const PublisherForm = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!WEB3FORMS_ACCESS_KEY || WEB3FORMS_ACCESS_KEY === "YOUR_ACCESS_KEY_HERE") {
-      toast({ title: "API Key Required", description: "Please add your Web3Forms access key in the code.", variant: "destructive" });
-      return;
-    }
     const r = publisherSchema.safeParse(data);
     if (!r.success) {
       const fe: Record<string, string> = {};
@@ -344,9 +337,9 @@ const PublisherForm = () => {
     }
     setSubmitting(true);
     try {
-      const res = await submitToWeb3Forms({ form_type: "Publisher Inquiry", ...data });
+      const res = await submitToBackend("Publisher Inquiry", data);
       if (res.success) {
-        toast({ title: "Submitted!", description: "We'll be in touch soon." });
+        toast({ title: "Submitted!", description: "Our team will review your inquiry." });
         setData((p) => ({ ...p, email: "", phone: "", firstName: "", lastName: "", city: "", artistName: "", privateLink: "", socials: "", privacyAccepted: false }));
       } else throw new Error();
     } catch {
@@ -510,10 +503,6 @@ const LegalForm = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!WEB3FORMS_ACCESS_KEY || WEB3FORMS_ACCESS_KEY === "YOUR_ACCESS_KEY_HERE") {
-      toast({ title: "API Key Required", description: "Please add your Web3Forms access key in the code.", variant: "destructive" });
-      return;
-    }
     const r = legalSchema.safeParse(data);
     if (!r.success) {
       const fe: Record<string, string> = {};
@@ -524,7 +513,7 @@ const LegalForm = () => {
     }
     setSubmitting(true);
     try {
-      const res = await submitToWeb3Forms({ form_type: "Legal Issue / Copyright Claim", ...data });
+      const res = await submitToBackend("Legal Issue / Copyright Claim", data);
       if (res.success) {
         toast({ title: "Submitted!", description: "Our legal team will review and respond." });
         setData((p) => ({ ...p, firstName: "", lastName: "", legalRepresentative: "", companyName: "", city: "", email: "", phone: "", description: "", territories: "", goodFaith: false, accuracyStatement: false, privacyAccepted: false }));
