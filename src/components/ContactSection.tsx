@@ -327,10 +327,6 @@ const PublisherForm = () => {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!WEB3FORMS_ACCESS_KEY || WEB3FORMS_ACCESS_KEY === "YOUR_ACCESS_KEY_HERE") {
-      toast({ title: "API Key Required", description: "Please add your Web3Forms access key in the code.", variant: "destructive" });
-      return;
-    }
     const r = publisherSchema.safeParse(data);
     if (!r.success) {
       const fe: Record<string, string> = {};
@@ -341,9 +337,9 @@ const PublisherForm = () => {
     }
     setSubmitting(true);
     try {
-      const res = await submitToWeb3Forms({ form_type: "Publisher Inquiry", ...data });
+      const res = await submitToBackend("Publisher Inquiry", data);
       if (res.success) {
-        toast({ title: "Submitted!", description: "We'll be in touch soon." });
+        toast({ title: "Submitted!", description: "Our team will review your inquiry." });
         setData((p) => ({ ...p, email: "", phone: "", firstName: "", lastName: "", city: "", artistName: "", privateLink: "", socials: "", privacyAccepted: false }));
       } else throw new Error();
     } catch {
