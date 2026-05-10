@@ -190,15 +190,37 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="forms">
+          <div className="flex flex-col sm:flex-row gap-2 mb-4">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, title..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="submitted">Submitted</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <TabsList>
-            <TabsTrigger value="forms">Form Submissions ({subs.length})</TabsTrigger>
-            <TabsTrigger value="songs">Songs ({songs.length})</TabsTrigger>
-            <TabsTrigger value="pitches">Pitches ({pitches.length})</TabsTrigger>
+            <TabsTrigger value="forms">Form Submissions ({filteredSubs.length})</TabsTrigger>
+            <TabsTrigger value="songs">Songs ({filteredSongs.length})</TabsTrigger>
+            <TabsTrigger value="pitches">Pitches ({filteredPitches.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="forms" className="space-y-3 mt-4">
-            {subs.length === 0 && <p className="text-muted-foreground">No submissions yet.</p>}
-            {subs.map((s) => (
+            {filteredSubs.length === 0 && <p className="text-muted-foreground">No submissions match.</p>}
+            {filteredSubs.map((s) => (
               <Card key={s.id} className="p-4">
                 <div className="flex justify-between items-start gap-4 flex-wrap">
                   <div className="flex-1 min-w-0">
