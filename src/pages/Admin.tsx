@@ -71,7 +71,16 @@ const Admin = () => {
       supabase.from("playlist_pitches").select("*").order("created_at", { ascending: false }),
     ]);
     setSubs((s.data as Submission[]) || []);
-    setSongs((so.data as Song[]) || []);
+    const rawSongs = (so.data as Song[]) || [];
+    // Sign private audio URLs so admin can preview tracks
+    const signed = await Promise.all(
+      rawSongs.map(async (song) => {
+        if (!song.audio_url || song.audio_url.startsWith("http")) return song;
+        const { data } = await supabase.storage.from("audio").createSignedUrl(song.audio_url, 3600);
+        return { ...song, audio_url: data?.signedUrl || song.audio_url };
+      })
+    );
+    setSongs(signed);
     setPitches((p.data as Pitch[]) || []);
   };
 

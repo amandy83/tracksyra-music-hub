@@ -45,7 +45,7 @@ const Dashboard = () => {
       supabase.from("ad_campaigns").select("*, songs(title)").order("created_at", { ascending: false }),
       supabase.from("royalties").select("*, songs(title)").order("created_at", { ascending: false }),
       supabase.from("song_analytics").select("*, songs(title)").order("date", { ascending: false }),
-      supabase.from("profiles").select("artist_name").maybeSingle(),
+      user ? supabase.from("profiles").select("artist_name").eq("id", user.id).maybeSingle() : Promise.resolve({ data: null }),
     ]);
     setSongs(s.data || []);
     setPitches(p.data || []);
@@ -56,7 +56,7 @@ const Dashboard = () => {
     setLoading(false);
   };
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => { if (user) loadAll(); }, [user]);
 
   const handleSignOut = async () => { await signOut(); navigate("/"); };
 
