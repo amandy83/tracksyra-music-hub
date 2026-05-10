@@ -67,6 +67,8 @@ const Admin = () => {
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [viewing, setViewing] = useState<Submission | null>(null);
   const [notes, setNotes] = useState("");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const load = async () => {
     const [s, so, p] = await Promise.all([
@@ -76,7 +78,6 @@ const Admin = () => {
     ]);
     setSubs((s.data as Submission[]) || []);
     const rawSongs = (so.data as Song[]) || [];
-    // Sign private audio URLs so admin can preview tracks
     const signed = await Promise.all(
       rawSongs.map(async (song) => {
         if (!song.audio_url || song.audio_url.startsWith("http")) return song;
@@ -88,7 +89,28 @@ const Admin = () => {
     setPitches((p.data as Pitch[]) || []);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    // Realtime: refresh on any change to admin-managed tables
+    const channel = supabase
+      .channel("admin-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "form_submissions" }, () => {
+        load();
+        toast.info("New submission activity");
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "songs" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "playlist_pitches" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  const matches = (text: string | null | undefined) =>
+    !search || (text || "").toLowerCase().includes(search.toLowerCase());
+  const statusOk = (s: string) => statusFilter === "all" || s === statusFilter;
+
+  const filteredSubs = subs.filter(s => statusOk(s.status) && (matches(s.name) || matches(s.email) || matches(s.form_type)));
+  const filteredSongs = songs.filter(s => statusOk(s.status) && (matches(s.title) || matches(s.primary_artist)));
+  const filteredPitches = pitches.filter(p => statusOk(p.status) && (matches(p.target_playlist) || matches(p.platform)));
 
   const updateSubStatus = async (id: string, status: string, admin_notes?: string) => {
     const { error } = await supabase
