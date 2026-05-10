@@ -56,7 +56,7 @@ const Dashboard = () => {
     setLoading(false);
   };
 
-  useEffect(() => { loadAll(); }, []);
+  useEffect(() => { if (user) loadAll(); }, [user]);
 
   const handleSignOut = async () => { await signOut(); navigate("/"); };
 
