@@ -263,8 +263,8 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="songs" className="space-y-3 mt-4">
-            {songs.length === 0 && <p className="text-muted-foreground">No songs yet.</p>}
-            {songs.map((s) => (
+            {filteredSongs.length === 0 && <p className="text-muted-foreground">No songs match.</p>}
+            {filteredSongs.map((s) => (
               <Card key={s.id} className="p-4">
                 <div className="flex justify-between items-start gap-4 flex-wrap">
                   <div className="flex gap-3 flex-1 min-w-0">
