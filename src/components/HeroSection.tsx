@@ -61,9 +61,10 @@ const HeroSection = () => {
       ref={heroRef}
       className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 pb-12"
     >
-      <Interactive3DBackground />
-      <Music3DScene />
-
+      <Suspense fallback={null}>
+        <Interactive3DBackground />
+        <Music3DScene />
+      </Suspense>
       <div className="container mx-auto px-4 relative z-20">
         <div className="max-w-4xl mx-auto text-center">
           <div
