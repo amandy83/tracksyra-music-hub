@@ -61,6 +61,16 @@ const Auth = () => {
     navigate("/dashboard");
   };
 
+  const handleForgot = async () => {
+    const email = prompt("Enter your account email to receive a reset link:");
+    if (!email) return;
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Reset link sent. Check your email.");
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -83,6 +93,13 @@ const Auth = () => {
               {busy ? "Logging in..." : "Log In"}
             </Button>
           </form>
+          <button
+            type="button"
+            onClick={handleForgot}
+            className="block mx-auto mt-4 text-sm text-pink-600 hover:underline"
+          >
+            Forgot password?
+          </button>
           <p className="text-center text-sm text-muted-foreground mt-6">
             New artists must be approved by our team. Please submit the contact form on the homepage.
           </p>

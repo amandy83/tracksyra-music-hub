@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Rocket, Play, ArrowRight } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, lazy, Suspense } from "react";
 import { gsap } from "@/hooks/useGSAP";
-import Interactive3DBackground from "./Interactive3DBackground";
-import Music3DScene from "./Music3DScene";
+const Interactive3DBackground = lazy(() => import("./Interactive3DBackground"));
+const Music3DScene = lazy(() => import("./Music3DScene"));
 
 const HeroSection = () => {
   const heroRef = useRef<HTMLDivElement>(null);
@@ -61,9 +61,10 @@ const HeroSection = () => {
       ref={heroRef}
       className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16 pb-12"
     >
-      <Interactive3DBackground />
-      <Music3DScene />
-
+      <Suspense fallback={null}>
+        <Interactive3DBackground />
+        <Music3DScene />
+      </Suspense>
       <div className="container mx-auto px-4 relative z-20">
         <div className="max-w-4xl mx-auto text-center">
           <div

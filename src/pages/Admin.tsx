@@ -7,9 +7,13 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, Eye, CheckCircle2, XCircle, Trash2 } from "lucide-react";
+import { LogOut, Eye, CheckCircle2, XCircle, Trash2, Search } from "lucide-react";
 
 type Submission = {
   id: string;
@@ -63,6 +67,8 @@ const Admin = () => {
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [viewing, setViewing] = useState<Submission | null>(null);
   const [notes, setNotes] = useState("");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const load = async () => {
     const [s, so, p] = await Promise.all([
@@ -72,7 +78,6 @@ const Admin = () => {
     ]);
     setSubs((s.data as Submission[]) || []);
     const rawSongs = (so.data as Song[]) || [];
-    // Sign private audio URLs so admin can preview tracks
     const signed = await Promise.all(
       rawSongs.map(async (song) => {
         if (!song.audio_url || song.audio_url.startsWith("http")) return song;
@@ -84,7 +89,28 @@ const Admin = () => {
     setPitches((p.data as Pitch[]) || []);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    // Realtime: refresh on any change to admin-managed tables
+    const channel = supabase
+      .channel("admin-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "form_submissions" }, () => {
+        load();
+        toast.info("New submission activity");
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "songs" }, () => load())
+      .on("postgres_changes", { event: "*", schema: "public", table: "playlist_pitches" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
+  const matches = (text: string | null | undefined) =>
+    !search || (text || "").toLowerCase().includes(search.toLowerCase());
+  const statusOk = (s: string) => statusFilter === "all" || s === statusFilter;
+
+  const filteredSubs = subs.filter(s => statusOk(s.status) && (matches(s.name) || matches(s.email) || matches(s.form_type)));
+  const filteredSongs = songs.filter(s => statusOk(s.status) && (matches(s.title) || matches(s.primary_artist)));
+  const filteredPitches = pitches.filter(p => statusOk(p.status) && (matches(p.target_playlist) || matches(p.platform)));
 
   const updateSubStatus = async (id: string, status: string, admin_notes?: string) => {
     const { error } = await supabase
@@ -164,15 +190,37 @@ const Admin = () => {
         </div>
 
         <Tabs defaultValue="forms">
+          <div className="flex flex-col sm:flex-row gap-2 mb-4">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search by name, email, title..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="submitted">Submitted</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <TabsList>
-            <TabsTrigger value="forms">Form Submissions ({subs.length})</TabsTrigger>
-            <TabsTrigger value="songs">Songs ({songs.length})</TabsTrigger>
-            <TabsTrigger value="pitches">Pitches ({pitches.length})</TabsTrigger>
+            <TabsTrigger value="forms">Form Submissions ({filteredSubs.length})</TabsTrigger>
+            <TabsTrigger value="songs">Songs ({filteredSongs.length})</TabsTrigger>
+            <TabsTrigger value="pitches">Pitches ({filteredPitches.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="forms" className="space-y-3 mt-4">
-            {subs.length === 0 && <p className="text-muted-foreground">No submissions yet.</p>}
-            {subs.map((s) => (
+            {filteredSubs.length === 0 && <p className="text-muted-foreground">No submissions match.</p>}
+            {filteredSubs.map((s) => (
               <Card key={s.id} className="p-4">
                 <div className="flex justify-between items-start gap-4 flex-wrap">
                   <div className="flex-1 min-w-0">
@@ -215,8 +263,8 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="songs" className="space-y-3 mt-4">
-            {songs.length === 0 && <p className="text-muted-foreground">No songs yet.</p>}
-            {songs.map((s) => (
+            {filteredSongs.length === 0 && <p className="text-muted-foreground">No songs match.</p>}
+            {filteredSongs.map((s) => (
               <Card key={s.id} className="p-4">
                 <div className="flex justify-between items-start gap-4 flex-wrap">
                   <div className="flex gap-3 flex-1 min-w-0">
@@ -255,8 +303,8 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="pitches" className="space-y-3 mt-4">
-            {pitches.length === 0 && <p className="text-muted-foreground">No pitches yet.</p>}
-            {pitches.map((p) => (
+            {filteredPitches.length === 0 && <p className="text-muted-foreground">No pitches match.</p>}
+            {filteredPitches.map((p) => (
               <Card key={p.id} className="p-4">
                 <div className="flex justify-between items-start gap-4 flex-wrap">
                   <div className="flex-1 min-w-0">
