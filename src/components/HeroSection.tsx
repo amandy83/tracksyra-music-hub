@@ -1,9 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Rocket, Play, ArrowRight } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, lazy, Suspense } from "react";
 import { gsap } from "@/hooks/useGSAP";
-import Interactive3DBackground from "./Interactive3DBackground";
-import Music3DScene from "./Music3DScene";
+const Interactive3DBackground = lazy(() => import("./Interactive3DBackground"));
+const Music3DScene = lazy(() => import("./Music3DScene"));
 
 const HeroSection = () => {
   const heroRef = useRef<HTMLDivElement>(null);
