@@ -303,8 +303,8 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="pitches" className="space-y-3 mt-4">
-            {pitches.length === 0 && <p className="text-muted-foreground">No pitches yet.</p>}
-            {pitches.map((p) => (
+            {filteredPitches.length === 0 && <p className="text-muted-foreground">No pitches match.</p>}
+            {filteredPitches.map((p) => (
               <Card key={p.id} className="p-4">
                 <div className="flex justify-between items-start gap-4 flex-wrap">
                   <div className="flex-1 min-w-0">
