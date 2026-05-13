@@ -76,6 +76,57 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          attempts: number
+          created_at: string
+          error_message: string | null
+          id: string
+          recipient_email: string
+          recipient_name: string | null
+          related_id: string | null
+          related_table: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          template: string
+          template_data: Json
+          updated_at: string
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          recipient_name?: string | null
+          related_id?: string | null
+          related_table?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          template: string
+          template_data?: Json
+          updated_at?: string
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          recipient_name?: string | null
+          related_id?: string | null
+          related_table?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          template?: string
+          template_data?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       form_submissions: {
         Row: {
           admin_notes: string | null
@@ -257,6 +308,48 @@ export type Database = {
           },
         ]
       }
+      smtp_settings: {
+        Row: {
+          created_at: string
+          from_email: string
+          from_name: string
+          host: string
+          id: string
+          is_active: boolean
+          password: string
+          port: number
+          secure: boolean
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          from_email: string
+          from_name?: string
+          host: string
+          id?: string
+          is_active?: boolean
+          password: string
+          port?: number
+          secure?: boolean
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          from_email?: string
+          from_name?: string
+          host?: string
+          id?: string
+          is_active?: boolean
+          password?: string
+          port?: number
+          secure?: boolean
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
       song_analytics: {
         Row: {
           created_at: string
@@ -405,6 +498,18 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      queue_email: {
+        Args: {
+          p_recipient_email: string
+          p_recipient_name: string
+          p_related_id: string
+          p_related_table: string
+          p_subject: string
+          p_template: string
+          p_template_data: Json
+        }
+        Returns: string
       }
     }
     Enums: {

@@ -14,6 +14,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { LogOut, Eye, CheckCircle2, XCircle, Trash2, Search } from "lucide-react";
+import EmailSettings from "@/components/EmailSettings";
 
 type Submission = {
   id: string;
@@ -216,6 +217,7 @@ const Admin = () => {
             <TabsTrigger value="forms">Form Submissions ({filteredSubs.length})</TabsTrigger>
             <TabsTrigger value="songs">Songs ({filteredSongs.length})</TabsTrigger>
             <TabsTrigger value="pitches">Pitches ({filteredPitches.length})</TabsTrigger>
+            <TabsTrigger value="emails">Emails</TabsTrigger>
           </TabsList>
 
           <TabsContent value="forms" className="space-y-3 mt-4">
@@ -333,6 +335,10 @@ const Admin = () => {
                 </div>
               </Card>
             ))}
+          </TabsContent>
+
+          <TabsContent value="emails" className="mt-4">
+            <EmailSettings />
           </TabsContent>
         </Tabs>
       </main>
