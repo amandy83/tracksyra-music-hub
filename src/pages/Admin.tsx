@@ -216,6 +216,7 @@ const Admin = () => {
             <TabsTrigger value="forms">Form Submissions ({filteredSubs.length})</TabsTrigger>
             <TabsTrigger value="songs">Songs ({filteredSongs.length})</TabsTrigger>
             <TabsTrigger value="pitches">Pitches ({filteredPitches.length})</TabsTrigger>
+            <TabsTrigger value="emails">Emails</TabsTrigger>
           </TabsList>
 
           <TabsContent value="forms" className="space-y-3 mt-4">
