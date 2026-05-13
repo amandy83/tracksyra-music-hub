@@ -335,6 +335,10 @@ const Admin = () => {
               </Card>
             ))}
           </TabsContent>
+
+          <TabsContent value="emails" className="mt-4">
+            <EmailSettings />
+          </TabsContent>
         </Tabs>
       </main>
 
