@@ -14,6 +14,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { LogOut, Eye, CheckCircle2, XCircle, Trash2, Search } from "lucide-react";
+import EmailSettings from "@/components/EmailSettings";
 
 type Submission = {
   id: string;
