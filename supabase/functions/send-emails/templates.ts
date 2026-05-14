@@ -87,6 +87,26 @@ export function renderTemplate(name: string, data: Record<string, any>) {
       body = `<p>If you're reading this, your SMTP credentials are working perfectly.</p>`;
       cta = undefined;
       break;
+    case "upload_success":
+      title = `Upload received: "${data.title}"`;
+      body = `<p>Hi ${n},</p><p>We've received your release <strong>${data.title}</strong> by ${data.artist}. Our team will validate the files and metadata, then move it into review within 24 hours.</p>`;
+      break;
+    case "release_approved":
+      title = `Release approved: "${data.title}" 🎉`;
+      body = `<p>Hi ${n},</p><p>Great news — <strong>${data.title}</strong> passed review and is queued for distribution to all selected platforms.</p>`;
+      break;
+    case "distribution_started":
+      title = `Distribution started: "${data.title}" 🚀`;
+      body = `<p>Hi ${n},</p><p>Your release <strong>${data.title}</strong> is now being delivered to streaming platforms. Most stores go live within 1–7 days.</p>`;
+      break;
+    case "release_live":
+      title = `Your release is LIVE: "${data.title}" 🎧`;
+      body = `<p>Hi ${n},</p><p><strong>${data.title}</strong> is now live on streaming platforms. Open your dashboard to see live links per platform.</p>`;
+      break;
+    case "release_rejected":
+      title = `Action needed: "${data.title}"`;
+      body = `<p>Hi ${n},</p><p>Your release <strong>${data.title}</strong> needs changes before we can distribute it.</p>${data.reason ? `<p style="background:#fdf2f8;padding:12px;border-radius:8px;font-size:13px;"><strong>Reason:</strong> ${data.reason}</p>` : ""}<p>You can edit and resubmit from your dashboard.</p>`;
+      break;
   }
 
   const html = layout(title, body, cta);
