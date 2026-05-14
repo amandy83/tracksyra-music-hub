@@ -32,6 +32,8 @@ const Dashboard = () => {
   const [analytics, setAnalytics] = useState<Analytics[]>([]);
   const [loading, setLoading] = useState(true);
   const [openUpload, setOpenUpload] = useState(false);
+  const [openRelease, setOpenRelease] = useState(false);
+  const [releases, setReleases] = useState<any[]>([]);
   const [openPitch, setOpenPitch] = useState(false);
   const [editPitch, setEditPitch] = useState<Pitch | null>(null);
   const [openAd, setOpenAd] = useState(false);
