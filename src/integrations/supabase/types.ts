@@ -76,6 +76,41 @@ export type Database = {
           },
         ]
       }
+      distribution_timeline: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          release_id: string
+          stage: Database["public"]["Enums"]["release_status"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          release_id: string
+          stage: Database["public"]["Enums"]["release_status"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          release_id?: string
+          stage?: Database["public"]["Enums"]["release_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "distribution_timeline_release_id_fkey"
+            columns: ["release_id"]
+            isOneToOne: false
+            referencedRelation: "releases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_logs: {
         Row: {
           attempts: number
@@ -165,6 +200,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      platform_deliveries: {
+        Row: {
+          created_at: string
+          delivered_at: string | null
+          id: string
+          live_url: string | null
+          notes: string | null
+          platform: Database["public"]["Enums"]["dsp_platform"]
+          release_id: string
+          status: Database["public"]["Enums"]["delivery_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          live_url?: string | null
+          notes?: string | null
+          platform: Database["public"]["Enums"]["dsp_platform"]
+          release_id: string
+          status?: Database["public"]["Enums"]["delivery_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string | null
+          id?: string
+          live_url?: string | null
+          notes?: string | null
+          platform?: Database["public"]["Enums"]["dsp_platform"]
+          release_id?: string
+          status?: Database["public"]["Enums"]["delivery_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_deliveries_release_id_fkey"
+            columns: ["release_id"]
+            isOneToOne: false
+            referencedRelation: "releases"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       playlist_pitches: {
         Row: {
@@ -261,6 +343,72 @@ export type Database = {
           main_genre?: string | null
           phone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      releases: {
+        Row: {
+          admin_notes: string | null
+          ai_content_declared: boolean
+          copyright_declared: boolean
+          copyright_owner: string | null
+          cover_art_url: string | null
+          created_at: string
+          genre: string | null
+          id: string
+          language: string | null
+          primary_artist: string
+          rejection_reason: string | null
+          release_date: string | null
+          release_type: string
+          rights_owned: boolean
+          status: Database["public"]["Enums"]["release_status"]
+          title: string
+          upc: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          ai_content_declared?: boolean
+          copyright_declared?: boolean
+          copyright_owner?: string | null
+          cover_art_url?: string | null
+          created_at?: string
+          genre?: string | null
+          id?: string
+          language?: string | null
+          primary_artist: string
+          rejection_reason?: string | null
+          release_date?: string | null
+          release_type?: string
+          rights_owned?: boolean
+          status?: Database["public"]["Enums"]["release_status"]
+          title: string
+          upc?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          ai_content_declared?: boolean
+          copyright_declared?: boolean
+          copyright_owner?: string | null
+          cover_art_url?: string | null
+          created_at?: string
+          genre?: string | null
+          id?: string
+          language?: string | null
+          primary_artist?: string
+          rejection_reason?: string | null
+          release_date?: string | null
+          release_type?: string
+          rights_owned?: boolean
+          status?: Database["public"]["Enums"]["release_status"]
+          title?: string
+          upc?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -466,6 +614,130 @@ export type Database = {
         }
         Relationships: []
       }
+      tracks: {
+        Row: {
+          audio_format: string | null
+          audio_hash: string | null
+          audio_url: string | null
+          bitrate_kbps: number | null
+          channels: number | null
+          composer: string | null
+          created_at: string
+          duration_sec: number | null
+          explicit: boolean
+          featured_artists: string | null
+          file_size_bytes: number | null
+          id: string
+          isrc: string | null
+          lyrics: string | null
+          primary_artist: string
+          release_id: string
+          sample_rate_hz: number | null
+          title: string
+          track_number: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          audio_format?: string | null
+          audio_hash?: string | null
+          audio_url?: string | null
+          bitrate_kbps?: number | null
+          channels?: number | null
+          composer?: string | null
+          created_at?: string
+          duration_sec?: number | null
+          explicit?: boolean
+          featured_artists?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          isrc?: string | null
+          lyrics?: string | null
+          primary_artist: string
+          release_id: string
+          sample_rate_hz?: number | null
+          title: string
+          track_number?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          audio_format?: string | null
+          audio_hash?: string | null
+          audio_url?: string | null
+          bitrate_kbps?: number | null
+          channels?: number | null
+          composer?: string | null
+          created_at?: string
+          duration_sec?: number | null
+          explicit?: boolean
+          featured_artists?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          isrc?: string | null
+          lyrics?: string | null
+          primary_artist?: string
+          release_id?: string
+          sample_rate_hz?: number | null
+          title?: string
+          track_number?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracks_release_id_fkey"
+            columns: ["release_id"]
+            isOneToOne: false
+            referencedRelation: "releases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      upload_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          file_name: string | null
+          file_size_bytes: number | null
+          file_type: string | null
+          id: string
+          release_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          file_type?: string | null
+          id?: string
+          release_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          file_name?: string | null
+          file_size_bytes?: number | null
+          file_type?: string | null
+          id?: string
+          release_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "upload_logs_release_id_fkey"
+            columns: ["release_id"]
+            isOneToOne: false
+            referencedRelation: "releases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -514,6 +786,34 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "artist"
+      delivery_status:
+        | "pending"
+        | "processing"
+        | "delivered"
+        | "live"
+        | "rejected"
+      dsp_platform:
+        | "spotify"
+        | "apple_music"
+        | "youtube_music"
+        | "amazon_music"
+        | "jiosaavn"
+        | "gaana"
+        | "wynk"
+        | "deezer"
+        | "tidal"
+        | "pandora"
+        | "instagram_facebook"
+        | "tiktok"
+      release_status:
+        | "draft"
+        | "uploaded"
+        | "under_review"
+        | "approved"
+        | "sent_to_stores"
+        | "processing"
+        | "live"
+        | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -642,6 +942,37 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "artist"],
+      delivery_status: [
+        "pending",
+        "processing",
+        "delivered",
+        "live",
+        "rejected",
+      ],
+      dsp_platform: [
+        "spotify",
+        "apple_music",
+        "youtube_music",
+        "amazon_music",
+        "jiosaavn",
+        "gaana",
+        "wynk",
+        "deezer",
+        "tidal",
+        "pandora",
+        "instagram_facebook",
+        "tiktok",
+      ],
+      release_status: [
+        "draft",
+        "uploaded",
+        "under_review",
+        "approved",
+        "sent_to_stores",
+        "processing",
+        "live",
+        "rejected",
+      ],
     },
   },
 } as const
