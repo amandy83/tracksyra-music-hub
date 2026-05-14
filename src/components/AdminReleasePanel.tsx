@@ -61,7 +61,7 @@ export default function AdminReleasePanel() {
   }, []);
 
   const setReleaseStatus = async (id: string, status: string, rejection_reason?: string | null) => {
-    const { error } = await supabase.from("releases").update({ status, rejection_reason: rejection_reason ?? null }).eq("id", id);
+    const { error } = await supabase.from("releases").update({ status: status as any, rejection_reason: rejection_reason ?? null }).eq("id", id);
     if (error) return toast.error(error.message);
     toast.success(`Release ${status.replace(/_/g, " ")}`);
     setViewing(null); setReason("");
