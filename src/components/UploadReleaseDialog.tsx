@@ -57,7 +57,7 @@ export default function UploadReleaseDialog({ open, onOpenChange, onSuccess }: P
       const { data: dup } = await supabase.from("tracks").select("id").eq("audio_hash", r.meta.hash).maybeSingle();
       if (dup) { setAudioErrors(["This exact audio file has already been uploaded."]); setValidating(false); return; }
       setAudioMeta(r.meta);
-    } else setAudioErrors(r.errors);
+    } else { setAudioErrors(r.errors); }
     setValidating(false);
   };
 
