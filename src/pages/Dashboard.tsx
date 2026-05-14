@@ -100,15 +100,38 @@ const Dashboard = () => {
           <Card className="p-4"><p className="text-xs text-muted-foreground">Active Pitches</p><p className="text-2xl font-bold">{pitches.length}</p></Card>
         </div>
 
-        <Tabs defaultValue="releases" className="w-full">
+        <Tabs defaultValue="distribution" className="w-full">
           <TabsList className="flex-wrap h-auto">
-            <TabsTrigger value="releases"><Music className="w-4 h-4 mr-1" />Releases</TabsTrigger>
+            <TabsTrigger value="distribution"><Disc3 className="w-4 h-4 mr-1" />Distribution</TabsTrigger>
+            <TabsTrigger value="releases"><Music className="w-4 h-4 mr-1" />Songs</TabsTrigger>
             <TabsTrigger value="analytics"><BarChart3 className="w-4 h-4 mr-1" />Analytics</TabsTrigger>
             <TabsTrigger value="royalties"><IndianRupee className="w-4 h-4 mr-1" />Royalties</TabsTrigger>
             <TabsTrigger value="pitches"><ListMusic className="w-4 h-4 mr-1" />Playlist Pitching</TabsTrigger>
             <TabsTrigger value="ads"><Megaphone className="w-4 h-4 mr-1" />Spotify Ads</TabsTrigger>
             <TabsTrigger value="canvas"><Video className="w-4 h-4 mr-1" />Canvas Video</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="distribution" className="mt-6">
+            <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+              <div>
+                <h2 className="text-2xl font-bold">Distribution</h2>
+                <p className="text-sm text-muted-foreground">Validated uploads with timeline + per-platform delivery status</p>
+              </div>
+              <Button variant="hero" onClick={() => setOpenRelease(true)}><Plus className="w-4 h-4 mr-2" />New Release</Button>
+            </div>
+            {releases.length === 0 ? (
+              <Card className="p-12 text-center border-dashed">
+                <Disc3 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold mb-2">No releases yet</h3>
+                <p className="text-muted-foreground mb-6">Upload a release to start the validation + distribution flow.</p>
+                <Button variant="hero" onClick={() => setOpenRelease(true)}><Plus className="w-4 h-4 mr-2" />Upload Release</Button>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {releases.map((r) => <ReleaseCard key={r.id} release={r} />)}
+              </div>
+            )}
+          </TabsContent>
 
           <TabsContent value="releases" className="mt-6">
             <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
