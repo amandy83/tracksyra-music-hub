@@ -43,13 +43,14 @@ const Dashboard = () => {
 
   const loadAll = async () => {
     setLoading(true);
-    const [s, p, a, r, an, pr] = await Promise.all([
+    const [s, p, a, r, an, pr, rel] = await Promise.all([
       supabase.from("songs").select("*").order("created_at", { ascending: false }),
       supabase.from("playlist_pitches").select("*, songs(title)").order("created_at", { ascending: false }),
       supabase.from("ad_campaigns").select("*, songs(title)").order("created_at", { ascending: false }),
       supabase.from("royalties").select("*, songs(title)").order("created_at", { ascending: false }),
       supabase.from("song_analytics").select("*, songs(title)").order("date", { ascending: false }),
       user ? supabase.from("profiles").select("artist_name").eq("id", user.id).maybeSingle() : Promise.resolve({ data: null }),
+      supabase.from("releases").select("*, platform_deliveries(*)").order("created_at", { ascending: false }),
     ]);
     setSongs(s.data || []);
     setPitches(p.data || []);
@@ -57,6 +58,7 @@ const Dashboard = () => {
     setRoyalties(r.data || []);
     setAnalytics(an.data || []);
     setProfile(pr.data);
+    setReleases(rel.data || []);
     setLoading(false);
   };
 
