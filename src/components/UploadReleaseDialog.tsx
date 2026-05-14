@@ -52,20 +52,21 @@ export default function UploadReleaseDialog({ open, onOpenChange, onSuccess }: P
   const handleAudio = async (f: File) => {
     setAudioFile(f); setAudioMeta(null); setAudioErrors([]); setValidating(true);
     const r = await validateAudio(f);
-    if (r.ok) {
-      // duplicate check by hash
+    if (r.ok === true) {
       const { data: dup } = await supabase.from("tracks").select("id").eq("audio_hash", r.meta.hash).maybeSingle();
       if (dup) { setAudioErrors(["This exact audio file has already been uploaded."]); setValidating(false); return; }
       setAudioMeta(r.meta);
-    } else { setAudioErrors(r.errors); }
+    } else {
+      setAudioErrors(r.errors);
+    }
     setValidating(false);
   };
 
   const handleCover = async (f: File) => {
     setCoverFile(f); setCoverMeta(null); setCoverErrors([]); setCoverPreview(""); setValidating(true);
     const r = await validateCover(f);
-    if (r.ok) { setCoverMeta(r.meta); setCoverPreview(r.previewUrl); }
-    else setCoverErrors(r.errors);
+    if (r.ok === true) { setCoverMeta(r.meta); setCoverPreview(r.previewUrl); }
+    else { setCoverErrors(r.errors); }
     setValidating(false);
   };
 
