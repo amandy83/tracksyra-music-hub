@@ -321,6 +321,7 @@ const Dashboard = () => {
       </main>
 
       <UploadSongDialog open={openUpload} onOpenChange={setOpenUpload} onSuccess={loadAll} />
+      <UploadReleaseDialog open={openRelease} onOpenChange={setOpenRelease} onSuccess={loadAll} />
       <PlaylistPitchDialog songs={songOpts} open={openPitch} onOpenChange={setOpenPitch} onSuccess={loadAll} />
       <PlaylistPitchDialog
         songs={songOpts}
