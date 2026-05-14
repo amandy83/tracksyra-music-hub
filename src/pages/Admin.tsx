@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { LogOut, Eye, CheckCircle2, XCircle, Trash2, Search } from "lucide-react";
 import EmailSettings from "@/components/EmailSettings";
+import AdminReleasePanel from "@/components/AdminReleasePanel";
 
 type Submission = {
   id: string;
