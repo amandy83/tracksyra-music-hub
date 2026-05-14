@@ -214,12 +214,17 @@ const Admin = () => {
             </Select>
           </div>
 
-          <TabsList>
+          <TabsList className="flex-wrap h-auto">
             <TabsTrigger value="forms">Form Submissions ({filteredSubs.length})</TabsTrigger>
+            <TabsTrigger value="releases">Releases</TabsTrigger>
             <TabsTrigger value="songs">Songs ({filteredSongs.length})</TabsTrigger>
             <TabsTrigger value="pitches">Pitches ({filteredPitches.length})</TabsTrigger>
             <TabsTrigger value="emails">Emails</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="releases" className="mt-4">
+            <AdminReleasePanel />
+          </TabsContent>
 
           <TabsContent value="forms" className="space-y-3 mt-4">
             {filteredSubs.length === 0 && <p className="text-muted-foreground">No submissions match.</p>}
