@@ -6,12 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Music, Upload, LogOut, Plus, BarChart3, IndianRupee, ListMusic, Megaphone, Video, Pencil, Trash2 } from "lucide-react";
+import { Music, Upload, LogOut, Plus, BarChart3, IndianRupee, ListMusic, Megaphone, Video, Pencil, Trash2, Disc3 } from "lucide-react";
 import UploadSongDialog from "@/components/UploadSongDialog";
+import UploadReleaseDialog from "@/components/UploadReleaseDialog";
 import EditSongDialog from "@/components/EditSongDialog";
 import PlaylistPitchDialog from "@/components/PlaylistPitchDialog";
 import AdCampaignDialog from "@/components/AdCampaignDialog";
 import CanvasUploadDialog from "@/components/CanvasUploadDialog";
+import ReleaseCard from "@/components/ReleaseCard";
 import { toast } from "sonner";
 
 type Song = any;
