@@ -18,7 +18,7 @@ export function startOperationsServer(runtime: WorkerRuntime, options: { port?: 
   const recovery = options.recovery || lazyRecovery();
   let passwordReset: PasswordResetService | null = null;
   let resendWebhooks: ResendWebhookService | null = null;
-  const port = options.port || Number(readEnv("WORKER_HTTP_PORT") || 8080);
+  const port = options.port || Number(readEnv("PORT") || readEnv("WORKER_HTTP_PORT") || 3000);
 
   const server = createServer(async (req, res) => {
     const trace = traceFromHeaders(req.headers);

@@ -2,6 +2,7 @@
   "name": "vite_react_shadcn_ts",
   "private": true,
   "version": "0.0.0",
+  "main": "server/src/workers/bootstrap/startWorkers.ts",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,6 +10,7 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
+    "start": "tsx server/src/workers/bootstrap/startWorkers.ts",
     "worker": "tsx server/src/workers/bootstrap/startWorkers.ts"
   },
   "dependencies": {
@@ -70,6 +72,7 @@
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.160.0",
+    "tsx": "^4.22.3",
     "uuid": "^14.0.0",
     "vaul": "^0.9.9",
     "zod": "^3.25.76"
@@ -89,7 +92,6 @@
     "lovable-tagger": "^1.1.13",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
-    "tsx": "^4.22.3",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.38.0",
     "vite": "^5.4.19"
