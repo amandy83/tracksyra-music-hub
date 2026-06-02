@@ -1,4 +1,4 @@
-import { createServer, type IncomingMessage, type ServerResponse } from "http";
+import express, { type NextFunction, type Request, type Response } from "express";
 import { inspectDeadLetterQueue, inspectQueue, retryQueueJob } from "../queue/queueFactory";
 import { queueNames } from "../queue/queueNames";
 import type { WorkerRuntime } from "../workers/runtime/workerRuntime";
@@ -19,93 +19,93 @@ export function startOperationsServer(runtime: WorkerRuntime, options: { port?: 
   let passwordReset: PasswordResetService | null = null;
   let resendWebhooks: ResendWebhookService | null = null;
   const port = options.port || Number(readEnv("PORT") || readEnv("WORKER_HTTP_PORT") || 3000);
+  const app = express();
 
-  const server = createServer(async (req, res) => {
+  app.use(express.raw({ type: "*/*", limit: "2mb" }));
+  app.use((req, res, next) => {
+    Object.entries(corsHeaders()).forEach(([name, value]) => res.setHeader(name, value));
+    if (req.method === "OPTIONS") return res.status(204).end();
+
     const trace = traceFromHeaders(req.headers);
     const ip = getClientIp(req.headers, req.socket.remoteAddress);
     const rate = checkRateLimit(rateLimitRules.api, ip);
     if (!rate.allowed) {
       suspiciousActivityLog({ category: "api", ip, actorUserId: trace.actorUserId, reason: "operations endpoint rate limit" });
-      return sendJson(res, 429, { error: "RATE_LIMITED", traceId: trace.traceId });
+      return res.status(429).json({ error: "RATE_LIMITED", traceId: trace.traceId });
     }
-
-    try {
-      const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
-      if (req.method === "OPTIONS") return sendCors(res);
-      if (req.method === "GET" && url.pathname === "/healthz") return sendJson(res, 200, { ok: true });
-      if (req.method === "GET" && url.pathname === "/readyz") {
-        const env = validateProductionEnvironment();
-        return sendJson(res, env.ok ? 200 : 503, env);
-      }
-      if (req.method === "GET" && url.pathname === "/metrics") {
-        const metrics = await runtime.prometheusMetrics();
-        res.writeHead(200, { "Content-Type": "text/plain; version=0.0.4" });
-        return res.end(metrics);
-      }
-      if (req.method === "POST" && url.pathname === "/queues/pause") {
-        await runtime.pauseAll();
-        return sendJson(res, 200, { ok: true });
-      }
-      if (req.method === "POST" && url.pathname === "/queues/resume") {
-        await runtime.resumeAll();
-        return sendJson(res, 200, { ok: true });
-      }
-
-      const match = url.pathname.match(/^\/queues\/([^/]+)(?:\/(retry|dlq))?$/);
-      if (match) {
-        const queueName = match[1];
-        if (!queueSet.has(queueName)) return sendJson(res, 404, { error: "UNKNOWN_QUEUE" });
-        if (req.method === "GET" && !match[2]) {
-          return sendJson(res, 200, await inspectQueue(queueName as any));
-        }
-        if (req.method === "POST" && match[2] === "retry") {
-          const body = await readJson(req);
-          await retryQueueJob(queueName as any, String(body.jobId));
-          return sendJson(res, 200, { ok: true });
-        }
-        if (req.method === "GET" && match[2] === "dlq") {
-          return sendJson(res, 200, await recovery.inspectDeadLetters(queueName));
-        }
-      }
-
-      if (req.method === "POST" && url.pathname === "/admin/recovery/email") {
-        const body = await readJson(req);
-        return sendJson(res, 200, await recovery.replayFailedEmail(String(body.emailQueueId)));
-      }
-      if (req.method === "POST" && url.pathname === "/admin/recovery/distribution") {
-        const body = await readJson(req);
-        await recovery.replayDistributionJob(String(body.jobId));
-        return sendJson(res, 200, { ok: true });
-      }
-      if (req.method === "POST" && url.pathname === "/admin/recovery/payout") {
-        const body = await readJson(req);
-        await recovery.replayPayoutJob(String(body.jobId));
-        return sendJson(res, 200, { ok: true });
-      }
-      if (req.method === "POST" && url.pathname === "/admin/recovery/webhook") {
-        const body = await readJson(req);
-        await recovery.replayWebhookFailure(String(body.eventId));
-        return sendJson(res, 200, { ok: true });
-      }
-      if (req.method === "POST" && url.pathname === "/api/auth/forgot-password") {
-        const body = await readJson(req);
-        const result = await (passwordReset ||= new PasswordResetService()).forgotPassword(String(body.email || ""), String(body.redirectTo || "") || undefined);
-        return sendJson(res, 202, { ok: true, accepted: result.accepted });
-      }
-      if (req.method === "POST" && url.pathname === "/api/webhooks/resend") {
-        const rawBody = await readRaw(req);
-        return sendJson(res, 200, await (resendWebhooks ||= new ResendWebhookService()).handle(rawBody, req.headers));
-      }
-
-      return sendJson(res, 404, { error: "NOT_FOUND" });
-    } catch (error) {
-      logger.error("operations endpoint failed", { component: "operations-server", traceId: trace.traceId, error: serializeError(error) });
-      const status = typeof (error as any)?.status === "number" ? (error as any).status : 500;
-      return sendJson(res, status, { error: status === 500 ? "INTERNAL_ERROR" : (error as any)?.code || "REQUEST_FAILED", traceId: trace.traceId });
-    }
+    return next();
   });
 
-  server.listen(port, () => logger.info("operations server listening", { component: "operations-server", port }));
+  app.get("/healthz", (_req, res) => res.status(200).json({ ok: true }));
+  app.get("/readyz", (_req, res) => {
+    const env = validateProductionEnvironment();
+    return res.status(env.ok ? 200 : 503).json(env);
+  });
+  app.get("/metrics", asyncHandler(async (_req, res) => {
+    const metrics = await runtime.prometheusMetrics();
+    res.type("text/plain; version=0.0.4").send(metrics);
+  }));
+  app.post("/queues/pause", asyncHandler(async (_req, res) => {
+    await runtime.pauseAll();
+    res.status(200).json({ ok: true });
+  }));
+  app.post("/queues/resume", asyncHandler(async (_req, res) => {
+    await runtime.resumeAll();
+    res.status(200).json({ ok: true });
+  }));
+
+  app.all(/^\/queues\/([^/]+)(?:\/(retry|dlq))?$/, asyncHandler(async (req, res) => {
+    const queueName = req.params[0];
+    const action = req.params[1];
+    if (!queueSet.has(queueName)) return res.status(404).json({ error: "UNKNOWN_QUEUE" });
+    if (req.method === "GET" && !action) return res.status(200).json(await inspectQueue(queueName as any));
+    if (req.method === "POST" && action === "retry") {
+      const body = readJson(req);
+      await retryQueueJob(queueName as any, String(body.jobId));
+      return res.status(200).json({ ok: true });
+    }
+    if (req.method === "GET" && action === "dlq") return res.status(200).json(await recovery.inspectDeadLetters(queueName));
+    return res.status(404).json({ error: "NOT_FOUND" });
+  }));
+
+  app.post("/admin/recovery/email", asyncHandler(async (req, res) => {
+    const body = readJson(req);
+    res.status(200).json(await recovery.replayFailedEmail(String(body.emailQueueId)));
+  }));
+  app.post("/admin/recovery/distribution", asyncHandler(async (req, res) => {
+    const body = readJson(req);
+    await recovery.replayDistributionJob(String(body.jobId));
+    res.status(200).json({ ok: true });
+  }));
+  app.post("/admin/recovery/payout", asyncHandler(async (req, res) => {
+    const body = readJson(req);
+    await recovery.replayPayoutJob(String(body.jobId));
+    res.status(200).json({ ok: true });
+  }));
+  app.post("/admin/recovery/webhook", asyncHandler(async (req, res) => {
+    const body = readJson(req);
+    await recovery.replayWebhookFailure(String(body.eventId));
+    res.status(200).json({ ok: true });
+  }));
+  app.post("/api/auth/forgot-password", asyncHandler(async (req, res) => {
+    const body = readJson(req);
+    const result = await (passwordReset ||= new PasswordResetService()).forgotPassword(String(body.email || ""), String(body.redirectTo || "") || undefined);
+    res.status(202).json({ ok: true, accepted: result.accepted });
+  }));
+  app.post("/api/webhooks/resend", asyncHandler(async (req, res) => {
+    const rawBody = readRaw(req);
+    res.status(200).json(await (resendWebhooks ||= new ResendWebhookService()).handle(rawBody, req.headers));
+  }));
+
+  app.use((_req, res) => res.status(404).json({ error: "NOT_FOUND" }));
+  app.use((error: unknown, req: Request, res: Response, _next: NextFunction) => {
+    const trace = traceFromHeaders(req.headers);
+    logger.error("operations endpoint failed", { component: "operations-server", traceId: trace.traceId, error: serializeError(error) });
+    const status = typeof (error as any)?.status === "number" ? (error as any).status : 500;
+    res.status(status).json({ error: status === 500 ? "INTERNAL_ERROR" : (error as any)?.code || "REQUEST_FAILED", traceId: trace.traceId });
+  });
+
+  const server = app.listen(port, () => logger.info("operations server listening", { component: "operations-server", port, framework: "express" }));
   return {
     server,
     close: () => new Promise<void>((resolve, reject) => server.close((error) => error ? reject(error) : resolve())),
@@ -123,34 +123,27 @@ function lazyRecovery() {
   };
 }
 
-async function readJson(req: IncomingMessage): Promise<Record<string, unknown>> {
-  const raw = await readRaw(req);
+function asyncHandler(handler: (req: Request, res: Response) => Promise<void | Response>) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    void Promise.resolve(handler(req, res)).catch(next);
+  };
+}
+
+function readJson(req: Request): Record<string, unknown> {
+  const raw = readRaw(req);
   if (!raw) return {};
   return JSON.parse(raw);
 }
 
-async function readRaw(req: IncomingMessage): Promise<string> {
-  const chunks: Buffer[] = [];
-  for await (const chunk of req) chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-  return Buffer.concat(chunks).toString("utf8");
+function readRaw(req: Request): string {
+  return Buffer.isBuffer(req.body) ? req.body.toString("utf8") : "";
 }
 
-function sendJson(res: ServerResponse, status: number, body: unknown) {
-  res.writeHead(status, corsHeaders({ "Content-Type": "application/json" }));
-  res.end(JSON.stringify(body));
-}
-
-function sendCors(res: ServerResponse) {
-  res.writeHead(204, corsHeaders());
-  res.end();
-}
-
-function corsHeaders(extra: Record<string, string> = {}) {
+function corsHeaders() {
   return {
     "Access-Control-Allow-Origin": readEnv("CORS_ORIGIN") || "*",
     "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
     "Access-Control-Allow-Headers": "content-type, authorization, svix-id, svix-timestamp, svix-signature",
-    ...extra,
   };
 }
 
