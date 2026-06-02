@@ -1,4 +1,14 @@
 services:
+  - type: static
+    name: tracksyra-frontend
+    branch: main
+    buildCommand: npm ci && npm run build
+    staticPublishPath: ./dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
   - type: web
     name: tracksyra-backend
     runtime: docker
