@@ -63,12 +63,14 @@ export class SqlDistributionStore implements DistributionStore {
       release_date: string | null;
       genre: string | null;
       language: string | null;
+      upc: string | null;
+      copyright_owner: string | null;
       cover_art_url: string | null;
       release_type: string | null;
       status: string | null;
       created_at: string | null;
     }>(
-      `SELECT id, COALESCE(artist_id, user_id) AS user_id, title, primary_artist, release_type, release_date, genre, language, cover_art_url, status, created_at
+      `SELECT id, COALESCE(artist_id, user_id) AS user_id, title, primary_artist, release_type, release_date, genre, language, upc, copyright_owner, cover_art_url, status, created_at
        FROM releases
        WHERE id = :releaseId
        LIMIT 1`,
@@ -140,6 +142,8 @@ export class SqlDistributionStore implements DistributionStore {
       release_date: string | null;
       genre: string | null;
       language: string | null;
+      upc: string | null;
+      copyright_owner: string | null;
       cover_art_url: string | null;
       release_type: string | null;
       release_status: string | null;
@@ -168,6 +172,8 @@ export class SqlDistributionStore implements DistributionStore {
          r.release_date,
          r.genre,
          r.language,
+         r.upc,
+         r.copyright_owner,
          r.cover_art_url,
          t.id AS track_id,
          COALESCE(t.artist_id, t.user_id) AS track_user_id,
@@ -202,6 +208,8 @@ export class SqlDistributionStore implements DistributionStore {
         release_date: row.release_date,
         genre: row.genre,
         language: row.language,
+        upc: row.upc,
+        copyright_owner: row.copyright_owner,
         cover_art_url: row.cover_art_url,
         status: row.release_status,
         created_at: row.release_created_at,
@@ -380,6 +388,43 @@ export class SqlDistributionStore implements DistributionStore {
         retryable: input.error?.retryable ?? null,
       },
     );
+
+    await this.db.query(
+      `UPDATE distribution_jobs
+       SET api_request = CAST(:apiRequest AS jsonb),
+           api_response = CAST(:apiResponse AS jsonb),
+           failure_reason = :failureReason,
+           retry_count = CASE WHEN :status = 'FAILED' THEN retry_count + 1 ELSE retry_count END,
+           updated_at = now()
+       WHERE release_id = :releaseId AND track_id = :trackId AND platform = :platform`,
+      {
+        releaseId: input.releaseId,
+        trackId: input.trackId,
+        platform: input.platform,
+        status: input.status,
+        apiRequest: JSON.stringify(extractApiRequest(input.rawResponse)),
+        apiResponse: JSON.stringify(extractApiResponse(input.rawResponse)),
+        failureReason: input.error?.message ?? null,
+      },
+    );
+
+    await this.db.query(
+      `INSERT INTO distribution_sync_logs (
+         provider, release_id, track_id, sync_type, status, api_request, api_response, failure_reason, retry_count
+       ) VALUES (
+         'too_lost', :releaseId, :trackId, 'DELIVERY_RESULT', :status,
+         CAST(:apiRequest AS jsonb), CAST(:apiResponse AS jsonb), :failureReason,
+         CASE WHEN :status = 'FAILED' THEN 1 ELSE 0 END
+       )`,
+      {
+        releaseId: input.releaseId,
+        trackId: input.trackId,
+        status: input.status,
+        apiRequest: JSON.stringify(extractApiRequest(input.rawResponse)),
+        apiResponse: JSON.stringify(extractApiResponse(input.rawResponse)),
+        failureReason: input.error?.message ?? null,
+      },
+    );
   }
 
   private mapRelease(row: {
@@ -391,6 +436,8 @@ export class SqlDistributionStore implements DistributionStore {
     genre?: string | null;
     language?: string | null;
     cover_art_url?: string | null;
+    upc?: string | null;
+    copyright_owner?: string | null;
   }): DistributionRelease {
     return {
       id: row.id,
@@ -400,7 +447,20 @@ export class SqlDistributionStore implements DistributionStore {
       releaseDate: row.release_date,
       genre: row.genre,
       language: row.language,
+      upc: row.upc,
+      copyright: row.copyright_owner,
       coverArtUrl: row.cover_art_url,
     };
   }
+}
+
+function extractApiRequest(value: unknown): unknown {
+  if (value && typeof value === "object" && "payload" in value) return (value as { payload?: unknown }).payload ?? {};
+  return {};
+}
+
+function extractApiResponse(value: unknown): unknown {
+  if (!value || typeof value !== "object") return value ?? {};
+  const { payload: _payload, ...response } = value as Record<string, unknown>;
+  return response;
 }

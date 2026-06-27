@@ -16,4 +16,6 @@ export * from "./queue/payoutQueue";
 export * from "./queue/payoutJobProcessor";
 
 export * from "./reconciliation/payoutReconciler";
+export * from "./providers/payoutProviderAdapter";
+export * from "./providers/providerAdapters";
 

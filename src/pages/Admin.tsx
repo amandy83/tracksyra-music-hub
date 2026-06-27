@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -13,9 +13,16 @@ import {
 } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { LogOut, Eye, CheckCircle2, XCircle, Trash2, Search } from "lucide-react";
+import { Activity, DollarSign, LogOut, Eye, CheckCircle2, XCircle, Trash2, Search, MailCheck, ShieldAlert, ClipboardCheck, Users, ShieldCheck } from "lucide-react";
 import EmailSettings from "@/components/EmailSettings";
 import AdminReleasePanel from "@/components/AdminReleasePanel";
+import AdminPromoAssetsPanel from "@/components/AdminPromoAssetsPanel";
+import AdminPlaylistQueue from "@/components/AdminPlaylistQueue";
+import AdminCuratorMarketplace from "@/components/AdminCuratorMarketplace";
+import AdminPlaylistAnalytics from "@/components/AdminPlaylistAnalytics";
+import AdminTooLostProviderPanel from "@/components/AdminTooLostProviderPanel";
+import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { GlassCard, KpiCard } from "@/components/dashboard/DashboardPrimitives";
 
 type Submission = {
   id: string;
@@ -51,11 +58,71 @@ type Pitch = {
   created_at: string;
 };
 
+type ArtistRequest = {
+  id: string;
+  user_id: string | null;
+  name: string;
+  email: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  artist_id: string | null;
+  request_data: any;
+  admin_notes: string | null;
+  created_at: string;
+};
+
+type FraudReview = {
+  review_id: string;
+  fraud_event_id: string;
+  event_id: string;
+  event_type: string;
+  rule_code: string | null;
+  track_id: string | null;
+  release_id: string | null;
+  user_id: string | null;
+  subject_user_id: string | null;
+  platform: string | null;
+  decision: string;
+  severity: string;
+  status: string;
+  fraud_score: number;
+  reasons: any[];
+  feature_vector: any;
+  raw_event: any;
+  queued_at: string;
+};
+
+type PlatformRole = "super_admin" | "publisher" | "label" | "artist";
+
+type PlatformUser = {
+  user_id: string;
+  email: string | null;
+  full_name: string | null;
+  artist_name: string | null;
+  roles: string[] | null;
+  status: string;
+  created_at: string;
+  last_sign_in_at: string | null;
+};
+
+type DistributionOps = {
+  queue: number;
+  failed: number;
+  processing: number;
+  live: number;
+  syncStatus: string;
+};
+
+const client = supabase as any;
+const platformRoles: PlatformRole[] = ["super_admin", "publisher", "label", "artist"];
+
 const StatusBadge = ({ status }: { status: string }) => {
   const map: Record<string, string> = {
     pending: "bg-amber-100 text-amber-800 border-amber-200",
+    PENDING: "bg-amber-100 text-amber-800 border-amber-200",
     approved: "bg-green-100 text-green-800 border-green-200",
+    APPROVED: "bg-green-100 text-green-800 border-green-200",
     rejected: "bg-red-100 text-red-800 border-red-200",
+    REJECTED: "bg-red-100 text-red-800 border-red-200",
     submitted: "bg-blue-100 text-blue-800 border-blue-200",
   };
   return <Badge variant="outline" className={map[status] || ""}>{status}</Badge>;
@@ -64,21 +131,34 @@ const StatusBadge = ({ status }: { status: string }) => {
 const Admin = () => {
   const { signOut } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [subs, setSubs] = useState<Submission[]>([]);
+  const [artistRequests, setArtistRequests] = useState<ArtistRequest[]>([]);
+  const [fraudReviews, setFraudReviews] = useState<FraudReview[]>([]);
   const [songs, setSongs] = useState<Song[]>([]);
   const [pitches, setPitches] = useState<Pitch[]>([]);
+  const [platformUsers, setPlatformUsers] = useState<PlatformUser[]>([]);
+  const [distributionOps, setDistributionOps] = useState<DistributionOps>({ queue: 0, failed: 0, processing: 0, live: 0, syncStatus: "not configured" });
+  const [roleSavingUserId, setRoleSavingUserId] = useState<string | null>(null);
   const [viewing, setViewing] = useState<Submission | null>(null);
   const [notes, setNotes] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   const load = async () => {
-    const [s, so, p] = await Promise.all([
+    const [s, ar, fr, so, p, users, distributionJobs, distributionProviders] = await Promise.all([
       supabase.from("form_submissions").select("*").order("created_at", { ascending: false }),
+      client.from("artist_requests").select("*").order("created_at", { ascending: false }),
+      client.from("fraud_review_queue").select("*").order("queued_at", { ascending: false }),
       supabase.from("songs").select("*").order("created_at", { ascending: false }),
       supabase.from("playlist_pitches").select("*").order("created_at", { ascending: false }),
+      client.rpc("list_platform_users"),
+      client.from("distribution_jobs").select("status,provider,updated_at").eq("provider", "too_lost").order("updated_at", { ascending: false }),
+      client.from("distribution_providers").select("provider,sync_status,last_sync_at").eq("provider", "too_lost").maybeSingle(),
     ]);
     setSubs((s.data as Submission[]) || []);
+    setArtistRequests((ar.data as ArtistRequest[]) || []);
+    setFraudReviews((fr.data as FraudReview[]) || []);
     const rawSongs = (so.data as Song[]) || [];
     const signed = await Promise.all(
       rawSongs.map(async (song) => {
@@ -89,6 +169,15 @@ const Admin = () => {
     );
     setSongs(signed);
     setPitches((p.data as Pitch[]) || []);
+    setPlatformUsers((users.data as PlatformUser[]) || []);
+    const jobs = distributionJobs.data || [];
+    setDistributionOps({
+      queue: jobs.filter((job: any) => ["PENDING", "SUBMITTED"].includes(job.status)).length,
+      failed: jobs.filter((job: any) => ["FAILED", "DEAD_LETTER"].includes(job.status)).length,
+      processing: jobs.filter((job: any) => job.status === "PROCESSING").length,
+      live: jobs.filter((job: any) => ["PUBLISHED", "DELIVERED"].includes(job.status)).length,
+      syncStatus: distributionProviders.data?.sync_status || "not configured",
+    });
   };
 
   useEffect(() => {
@@ -100,6 +189,15 @@ const Admin = () => {
         load();
         toast.info("New submission activity");
       })
+      .on("postgres_changes", { event: "*", schema: "public", table: "artist_requests" }, () => {
+        load();
+        toast.info("Artist request activity");
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "fraud_reviews" }, () => {
+        load();
+        toast.info("Fraud review activity");
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "fraud_events" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "songs" }, () => load())
       .on("postgres_changes", { event: "*", schema: "public", table: "playlist_pitches" }, () => load())
       .subscribe();
@@ -111,8 +209,15 @@ const Admin = () => {
   const statusOk = (s: string) => statusFilter === "all" || s === statusFilter;
 
   const filteredSubs = subs.filter(s => statusOk(s.status) && (matches(s.name) || matches(s.email) || matches(s.form_type)));
+  const filteredArtistRequests = artistRequests.filter(r => statusOk(r.status) && (matches(r.name) || matches(r.email) || matches(r.artist_id)));
+  const filteredFraudReviews = fraudReviews.filter(r => statusFilter === "all" || r.decision === statusFilter || r.severity === statusFilter || r.event_type === statusFilter)
+    .filter(r => matches(r.event_id) || matches(r.rule_code) || matches(r.event_type) || matches(r.platform) || matches(r.track_id) || matches(r.release_id));
   const filteredSongs = songs.filter(s => statusOk(s.status) && (matches(s.title) || matches(s.primary_artist)));
   const filteredPitches = pitches.filter(p => statusOk(p.status) && (matches(p.target_playlist) || matches(p.platform)));
+  const filteredPlatformUsers = platformUsers.filter((platformUser) => {
+    const roleText = (platformUser.roles || []).join(" ");
+    return matches(platformUser.email) || matches(platformUser.full_name) || matches(platformUser.artist_name) || matches(roleText) || matches(platformUser.status);
+  });
 
   const updateSubStatus = async (id: string, status: string, admin_notes?: string) => {
     const { error } = await supabase
@@ -123,6 +228,30 @@ const Admin = () => {
     toast.success(`Submission ${status}`);
     setViewing(null);
     setNotes("");
+    load();
+  };
+
+  const approveArtistRequest = async (id: string) => {
+    const adminNotes = prompt("Admin notes (optional):") || null;
+    const { error } = await client.rpc("approve_artist_request", {
+      p_request_id: id,
+      p_admin_notes: adminNotes,
+    });
+    if (error) return toast.error(error.message);
+    void supabase.functions.invoke("send-emails", { body: {} });
+    toast.success("Artist request approved");
+    load();
+  };
+
+  const rejectArtistRequest = async (id: string) => {
+    const adminNotes = prompt("Rejection notes (optional):") || null;
+    const { error } = await client.rpc("reject_artist_request", {
+      p_request_id: id,
+      p_admin_notes: adminNotes,
+    });
+    if (error) return toast.error(error.message);
+    void supabase.functions.invoke("send-emails", { body: {} });
+    toast.success("Artist request rejected");
     load();
   };
 
@@ -152,46 +281,71 @@ const Admin = () => {
     load();
   };
 
+  const decideFraudReview = async (reviewId: string, decision: "APPROVE" | "REJECT" | "ESCALATE") => {
+    const note = prompt("Review notes (optional):") || null;
+    const { error } = await client.rpc("decide_fraud_review", {
+      p_review_id: reviewId,
+      p_decision: decision,
+      p_notes: note,
+    });
+    if (error) return toast.error(error.message);
+    toast.success(`Fraud review ${decision.toLowerCase()}`);
+    load();
+  };
+
+  const assignPlatformRole = async (userId: string, role: PlatformRole) => {
+    setRoleSavingUserId(userId);
+    const { error } = await client.rpc("assign_platform_role", {
+      p_user_id: userId,
+      p_role: role,
+    });
+    setRoleSavingUserId(null);
+    if (error) return toast.error(error.message);
+    toast.success(`Assigned ${role.replace(/_/g, " ")} role`);
+    load();
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
   };
 
   const pendingSubs = subs.filter((s) => s.status === "pending").length;
+  const pendingArtistRequests = artistRequests.filter((request) => request.status === "PENDING").length;
+  const pendingFraudReviews = fraudReviews.length;
   const pendingSongs = songs.filter((s) => s.status === "submitted").length;
-  const pendingPitches = pitches.filter((p) => p.status === "pending").length;
+  const pendingPitches = pitches.filter((p) => ["submitted", "under_review"].includes(p.status)).length;
+  const activeTab = searchParams.get("tab") || "forms";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-white">
-      <header className="border-b bg-white/80 backdrop-blur sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">TrackSyra Admin</h1>
-            <p className="text-sm text-muted-foreground">Manage submissions, songs & pitches</p>
-          </div>
-          <Button variant="outline" onClick={handleSignOut}>
+    <DashboardShell
+      title="Admin Overview"
+      eyebrow="Operations command center"
+      actions={(
+        <>
+          <Button variant="outline" className="rounded-xl bg-white/75" onClick={() => navigate("/admin/review-queue")}>
+            <ClipboardCheck className="w-4 h-4 mr-2" /> Review Queue
+          </Button>
+          <Button variant="outline" className="rounded-xl bg-white/75" onClick={() => navigate("/admin/email-monitoring")}>
+            <MailCheck className="w-4 h-4 mr-2" /> Email Monitoring
+          </Button>
+          <Button variant="outline" className="rounded-xl bg-white/75" onClick={handleSignOut}>
             <LogOut className="w-4 h-4 mr-2" /> Log Out
           </Button>
-        </div>
-      </header>
-
-      <main className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <Card className="p-4">
-            <div className="text-sm text-muted-foreground">Pending Form Submissions</div>
-            <div className="text-3xl font-bold text-pink-600">{pendingSubs}</div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-sm text-muted-foreground">Songs Awaiting Review</div>
-            <div className="text-3xl font-bold text-pink-600">{pendingSongs}</div>
-          </Card>
-          <Card className="p-4">
-            <div className="text-sm text-muted-foreground">Pending Playlist Pitches</div>
-            <div className="text-3xl font-bold text-pink-600">{pendingPitches}</div>
-          </Card>
+        </>
+      )}
+    >
+      <div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-4 mb-6">
+          <KpiCard label="Pending Reviews" value={pendingArtistRequests + pendingSubs + pendingSongs + pendingPitches} delta={-3} comparison="review workload" icon={ClipboardCheck} accent="amber" />
+          <KpiCard label="Distribution Queue" value={distributionOps.queue} delta={0} comparison="Too Lost pending" icon={ShieldAlert} accent="green" />
+          <KpiCard label="Failed Deliveries" value={distributionOps.failed} delta={0} comparison="Too Lost failures" icon={ShieldAlert} accent="pink" />
+          <KpiCard label="Processing Releases" value={distributionOps.processing} delta={0} comparison="provider work" icon={DollarSign} accent="blue" />
+          <KpiCard label="Live Releases" value={distributionOps.live} delta={0} comparison="DSP live" icon={Users} accent="pink" />
+          <KpiCard label="Too Lost Sync" value={distributionOps.syncStatus} delta={distributionOps.processing} comparison={`${distributionOps.live} live releases`} icon={Activity} accent="teal" />
         </div>
 
-        <Tabs defaultValue="forms">
+        <Tabs value={activeTab} onValueChange={(value) => setSearchParams(value === "forms" ? {} : { tab: value })}>
           <div className="flex flex-col sm:flex-row gap-2 mb-4">
             <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -206,7 +360,16 @@ const Admin = () => {
               <SelectTrigger className="w-full sm:w-48"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="PENDING">Artist Pending</SelectItem>
+                <SelectItem value="APPROVED">Artist Approved</SelectItem>
+                <SelectItem value="REJECTED">Artist Rejected</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="CATALOG">Fraud Catalog</SelectItem>
+                <SelectItem value="STREAM">Fraud Stream</SelectItem>
+                <SelectItem value="AUDIO_FINGERPRINT">Fraud Fingerprint</SelectItem>
+                <SelectItem value="ACCOUNT">Fraud Account</SelectItem>
+                <SelectItem value="critical">Critical</SelectItem>
+                <SelectItem value="high">High</SelectItem>
                 <SelectItem value="submitted">Submitted</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="rejected">Rejected</SelectItem>
@@ -214,22 +377,203 @@ const Admin = () => {
             </Select>
           </div>
 
-          <TabsList className="flex-wrap h-auto">
+          <TabsList className="flex-wrap h-auto rounded-xl bg-white/70 p-1 backdrop-blur">
+            <TabsTrigger value="artists">Artist Requests ({filteredArtistRequests.length})</TabsTrigger>
+            <TabsTrigger value="users">User Management ({filteredPlatformUsers.length})</TabsTrigger>
+            <TabsTrigger value="fraud">Fraud ({filteredFraudReviews.length})</TabsTrigger>
             <TabsTrigger value="forms">Form Submissions ({filteredSubs.length})</TabsTrigger>
             <TabsTrigger value="releases">Releases</TabsTrigger>
+            <TabsTrigger value="promo-assets">Promo Assets</TabsTrigger>
+            <TabsTrigger value="playlist-queue">Playlist Queue</TabsTrigger>
+            <TabsTrigger value="curator-marketplace">Curator Marketplace</TabsTrigger>
+            <TabsTrigger value="playlist-analytics">Playlist Analytics</TabsTrigger>
+            <TabsTrigger value="too-lost">Too Lost Provider</TabsTrigger>
             <TabsTrigger value="songs">Songs ({filteredSongs.length})</TabsTrigger>
             <TabsTrigger value="pitches">Pitches ({filteredPitches.length})</TabsTrigger>
             <TabsTrigger value="emails">Emails</TabsTrigger>
           </TabsList>
 
+          <TabsContent value="users" className="space-y-3 mt-4">
+            {filteredPlatformUsers.length === 0 && <p className="text-muted-foreground">No users match.</p>}
+            {filteredPlatformUsers.map((platformUser) => {
+              const currentRole = normalizePlatformRole(platformUser.roles);
+              const displayName = platformUser.full_name || platformUser.artist_name || "Unnamed user";
+              return (
+                <GlassCard key={platformUser.user_id} className="p-4">
+                  <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.5fr_1.3fr_0.8fr_1fr] xl:items-center">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="h-4 w-4 text-pink-600" />
+                        <p className="truncate font-semibold">{displayName}</p>
+                      </div>
+                      <p className="truncate text-sm text-muted-foreground">{platformUser.user_id}</p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Email</p>
+                      <p className="truncate text-sm">{platformUser.email || "No email"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Status</p>
+                      <StatusBadge status={platformUser.status} />
+                    </div>
+                    <div>
+                      <p className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Role</p>
+                      <Select
+                        value={currentRole}
+                        onValueChange={(value: PlatformRole) => assignPlatformRole(platformUser.user_id, value)}
+                        disabled={roleSavingUserId === platformUser.user_id}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {platformRoles.map((role) => (
+                            <SelectItem key={role} value={role}>{role.replace(/_/g, " ")}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </GlassCard>
+              );
+            })}
+          </TabsContent>
+
+          <TabsContent value="artists" className="space-y-3 mt-4">
+            {filteredArtistRequests.length === 0 && <p className="text-muted-foreground">No artist requests match.</p>}
+            {filteredArtistRequests.map((request) => (
+              <GlassCard key={request.id} className="p-4">
+                <div className="flex justify-between items-start gap-4 flex-wrap">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <span className="font-semibold">{request.name}</span>
+                      <StatusBadge status={request.status} />
+                    </div>
+                    <p className="text-sm text-muted-foreground truncate">{request.email}</p>
+                    {!request.user_id && (
+                      <p className="text-xs text-amber-700 mt-1">Approval requires an auth account with this email.</p>
+                    )}
+                    {request.artist_id && (
+                      <p className="text-xs text-muted-foreground mt-1">Artist ID: {request.artist_id}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(request.created_at).toLocaleString()}
+                    </p>
+                    {request.admin_notes && (
+                      <p className="text-xs mt-2 p-2 bg-muted rounded">Notes: {request.admin_notes}</p>
+                    )}
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      {Object.entries(request.request_data || {}).slice(0, 8).map(([key, value]) => (
+                        <div key={key} className="rounded border bg-background p-2">
+                          <span className="font-medium text-muted-foreground">{key}: </span>
+                          <span>{String(value)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    {request.status !== "APPROVED" && (
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={() => approveArtistRequest(request.id)}
+                        disabled={!request.user_id}
+                        title={!request.user_id ? "Artist must create an auth account with this email before approval" : undefined}
+                      >
+                        <CheckCircle2 className="w-4 h-4 mr-1" /> Approve
+                      </Button>
+                    )}
+                    {request.status !== "REJECTED" && (
+                      <Button size="sm" variant="destructive" onClick={() => rejectArtistRequest(request.id)}>
+                        <XCircle className="w-4 h-4 mr-1" /> Reject
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </GlassCard>
+            ))}
+          </TabsContent>
+
           <TabsContent value="releases" className="mt-4">
             <AdminReleasePanel />
+          </TabsContent>
+
+          <TabsContent value="promo-assets" className="mt-4">
+            <AdminPromoAssetsPanel />
+          </TabsContent>
+
+          <TabsContent value="playlist-queue" className="mt-4">
+            <AdminPlaylistQueue />
+          </TabsContent>
+
+          <TabsContent value="curator-marketplace" className="mt-4">
+            <AdminCuratorMarketplace />
+          </TabsContent>
+
+          <TabsContent value="playlist-analytics" className="mt-4">
+            <AdminPlaylistAnalytics />
+          </TabsContent>
+
+          <TabsContent value="too-lost" className="mt-4">
+            <AdminTooLostProviderPanel />
+          </TabsContent>
+
+          <TabsContent value="fraud" className="space-y-3 mt-4">
+            {filteredFraudReviews.length === 0 && <p className="text-muted-foreground">No fraud reviews match.</p>}
+            {filteredFraudReviews.map((review) => {
+              const reasons = Array.isArray(review.reasons) ? review.reasons : [];
+              return (
+                <GlassCard key={review.review_id} className="p-4">
+                  <div className="flex justify-between items-start gap-4 flex-wrap">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <ShieldAlert className="w-4 h-4 text-red-600" />
+                        <span className="font-semibold">{review.rule_code || review.event_type}</span>
+                        <Badge variant={review.fraud_score >= 75 ? "destructive" : "outline"}>
+                          Score {review.fraud_score}
+                        </Badge>
+                        <Badge variant="secondary">{review.severity}</Badge>
+                        <Badge variant="outline">{review.event_type}</Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground break-all">Event: {review.event_id}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {review.platform ? `Platform: ${review.platform} · ` : ""}
+                        {review.track_id ? `Track: ${review.track_id} · ` : ""}
+                        {review.release_id ? `Release: ${review.release_id}` : ""}
+                      </p>
+                      <div className="mt-3 space-y-2">
+                        {reasons.slice(0, 4).map((reason, index) => (
+                          <div key={`${review.review_id}-${index}`} className="rounded border bg-background p-2 text-xs">
+                            <div className="font-medium">{reason.rule || review.rule_code}</div>
+                            <div className="text-muted-foreground">{reason.explanation || "Fraud signal requires admin review."}</div>
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        Queued {new Date(review.queued_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      <Button size="sm" variant="outline" onClick={() => decideFraudReview(review.review_id, "APPROVE")}>
+                        <CheckCircle2 className="w-4 h-4 mr-1" /> False Positive
+                      </Button>
+                      <Button size="sm" variant="destructive" onClick={() => decideFraudReview(review.review_id, "REJECT")}>
+                        <XCircle className="w-4 h-4 mr-1" /> Confirm
+                      </Button>
+                      <Button size="sm" variant="secondary" onClick={() => decideFraudReview(review.review_id, "ESCALATE")}>
+                        Escalate
+                      </Button>
+                    </div>
+                  </div>
+                </GlassCard>
+              );
+            })}
           </TabsContent>
 
           <TabsContent value="forms" className="space-y-3 mt-4">
             {filteredSubs.length === 0 && <p className="text-muted-foreground">No submissions match.</p>}
             {filteredSubs.map((s) => (
-              <Card key={s.id} className="p-4">
+              <GlassCard key={s.id} className="p-4">
                 <div className="flex justify-between items-start gap-4 flex-wrap">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -266,14 +610,14 @@ const Admin = () => {
                     </Button>
                   </div>
                 </div>
-              </Card>
+              </GlassCard>
             ))}
           </TabsContent>
 
           <TabsContent value="songs" className="space-y-3 mt-4">
             {filteredSongs.length === 0 && <p className="text-muted-foreground">No songs match.</p>}
             {filteredSongs.map((s) => (
-              <Card key={s.id} className="p-4">
+              <GlassCard key={s.id} className="p-4">
                 <div className="flex justify-between items-start gap-4 flex-wrap">
                   <div className="flex gap-3 flex-1 min-w-0">
                     {s.cover_art_url && (
@@ -306,14 +650,14 @@ const Admin = () => {
                     )}
                   </div>
                 </div>
-              </Card>
+              </GlassCard>
             ))}
           </TabsContent>
 
           <TabsContent value="pitches" className="space-y-3 mt-4">
             {filteredPitches.length === 0 && <p className="text-muted-foreground">No pitches match.</p>}
             {filteredPitches.map((p) => (
-              <Card key={p.id} className="p-4">
+              <GlassCard key={p.id} className="p-4">
                 <div className="flex justify-between items-start gap-4 flex-wrap">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
@@ -339,7 +683,7 @@ const Admin = () => {
                     )}
                   </div>
                 </div>
-              </Card>
+              </GlassCard>
             ))}
           </TabsContent>
 
@@ -347,7 +691,7 @@ const Admin = () => {
             <EmailSettings />
           </TabsContent>
         </Tabs>
-      </main>
+      </div>
 
       {/* View submission dialog */}
       <Dialog open={!!viewing} onOpenChange={(v) => !v && setViewing(null)}>
@@ -381,8 +725,15 @@ const Admin = () => {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </DashboardShell>
   );
 };
+
+function normalizePlatformRole(roles: string[] | null | undefined): PlatformRole {
+  if (roles?.includes("super_admin") || roles?.includes("admin")) return "super_admin";
+  if (roles?.includes("publisher")) return "publisher";
+  if (roles?.includes("label")) return "label";
+  return "artist";
+}
 
 export default Admin;

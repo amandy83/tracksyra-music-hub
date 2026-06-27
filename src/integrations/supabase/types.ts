@@ -738,6 +738,99 @@ export type Database = {
           },
         ]
       }
+      publisher_labels: {
+        Row: {
+          id: string
+          publisher_user_id: string
+          label_user_id: string
+          status: string
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          publisher_user_id: string
+          label_user_id: string
+          status?: string
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          publisher_user_id?: string
+          label_user_id?: string
+          status?: string
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      label_artists: {
+        Row: {
+          id: string
+          label_user_id: string
+          artist_user_id: string
+          status: string
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          label_user_id: string
+          artist_user_id: string
+          status?: string
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          label_user_id?: string
+          artist_user_id?: string
+          status?: string
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      artist_assignment_audit_logs: {
+        Row: {
+          id: string
+          actor_user_id: string | null
+          action: string
+          publisher_user_id: string | null
+          label_user_id: string | null
+          artist_user_id: string | null
+          metadata: Json
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          actor_user_id?: string | null
+          action: string
+          publisher_user_id?: string | null
+          label_user_id?: string | null
+          artist_user_id?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          actor_user_id?: string | null
+          action?: string
+          publisher_user_id?: string | null
+          label_user_id?: string | null
+          artist_user_id?: string | null
+          metadata?: Json
+          created_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -771,6 +864,39 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_any_role: {
+        Args: {
+          _user_id: string
+          _roles: Database["public"]["Enums"]["app_role"][]
+        }
+        Returns: boolean
+      }
+      has_permission: {
+        Args: {
+          _permission: string
+        }
+        Returns: boolean
+      }
+      can_access_artist: {
+        Args: {
+          _artist_user_id: string
+        }
+        Returns: boolean
+      }
+      is_label_artist: {
+        Args: {
+          _label_user_id: string
+          _artist_user_id: string
+        }
+        Returns: boolean
+      }
+      is_publisher_label: {
+        Args: {
+          _publisher_user_id: string
+          _label_user_id: string
+        }
+        Returns: boolean
+      }
       queue_email: {
         Args: {
           p_recipient_email: string
@@ -785,7 +911,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "artist"
+      app_role: "super_admin" | "publisher" | "label" | "artist"
       delivery_status:
         | "pending"
         | "processing"
@@ -941,7 +1067,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "artist"],
+      app_role: ["super_admin", "publisher", "label", "artist"],
       delivery_status: [
         "pending",
         "processing",

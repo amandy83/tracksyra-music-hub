@@ -1,4 +1,8 @@
-project_id = "konlvaogrijyhrtgueom"
+project_id = "busmtpthvtugdesnamho"
+
+[auth]
+site_url = "https://hello.tracksyra.com"
+additional_redirect_urls = ["https://hello.tracksyra.com/reset-password"]
 
 [functions.send-emails]
 verify_jwt = false

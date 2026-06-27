@@ -30,6 +30,8 @@ export type MusicRelease = {
   featuredArtists: string[];
   genre: string;
   language: string;
+  upc?: string | null;
+  copyright?: string | null;
   releaseDate: string | null;
   coverUrl: string | null;
   audioFiles: MusicReleaseAudioFile[];

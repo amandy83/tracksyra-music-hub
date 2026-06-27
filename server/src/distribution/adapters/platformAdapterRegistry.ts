@@ -1,5 +1,5 @@
 import { DISTRIBUTION_PLATFORMS, type DistributionPlatformName } from "../models/distributionTypes";
-import { RevelatorAdapter } from "../providers/revelator/revelatorAdapter";
+import { TooLostAdapter } from "../providers/too-lost/tooLostAdapter";
 
 import type { PlatformAdapter } from "./platformAdapter";
 
@@ -19,7 +19,7 @@ export class PlatformAdapterRegistry {
 
   constructor(
     supportedPlatforms: readonly string[] = DISTRIBUTION_PLATFORMS,
-    fallbackPlatform: string | null = "revelator",
+    fallbackPlatform: string | null = "too_lost",
   ) {
     this.supportedPlatforms = new Set(supportedPlatforms);
     this.fallbackPlatform = fallbackPlatform;
@@ -52,7 +52,7 @@ export class PlatformAdapterRegistry {
 }
 
 export function createDefaultPlatformAdapterRegistry(): PlatformAdapterRegistry {
-  const registry = new PlatformAdapterRegistry(["revelator"], "revelator");
-  registry.register(new RevelatorAdapter());
+  const registry = new PlatformAdapterRegistry(["too_lost"], "too_lost");
+  registry.register(new TooLostAdapter());
   return registry;
 }

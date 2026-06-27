@@ -14,7 +14,30 @@ export type DistributionTransitionInput = {
   metadata?: unknown;
 };
 
-export class DistributionIntelligenceStore {
+export interface DistributionIntelligenceStoreLike {
+  getDeliveryStatus(input: { releaseId: string; trackId?: string | null; platform: DistributionPlatformName }): Promise<DistributionStatus | null>;
+  appendStateHistory(input: DistributionTransitionInput): Promise<void>;
+  scheduleRetry(input: {
+    jobId: string;
+    releaseId: string;
+    trackId?: string | null;
+    platform: DistributionPlatformName;
+    attempt: number;
+    retryAt: Date;
+    error: NormalizedDistributionError;
+  }): Promise<void>;
+  markDeadLetter(input: {
+    jobId: string;
+    releaseId: string;
+    trackId?: string | null;
+    platform: DistributionPlatformName;
+    attempt: number;
+    error: NormalizedDistributionError;
+  }): Promise<void>;
+  updateJobLifecycleStatus?(jobId: string, status: DistributionJobStatus): Promise<void>;
+}
+
+export class DistributionIntelligenceStore implements DistributionIntelligenceStoreLike {
   constructor(private db: SqlExecutor) {}
 
   async getDeliveryStatus(input: { releaseId: string; trackId?: string | null; platform: DistributionPlatformName }): Promise<DistributionStatus | null> {
@@ -125,4 +148,3 @@ export class DistributionIntelligenceStore {
     );
   }
 }
-

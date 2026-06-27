@@ -2,12 +2,15 @@ import { extname } from "node:path";
 import type { AudioCodec, AudioQualityMetadata, MediaValidationIssue, MediaValidationResult } from "../models";
 import { FfmpegRunner } from "./ffmpeg";
 
-const ALLOWED_AUDIO_EXTENSIONS = new Set([".wav", ".mp3", ".flac", ".aiff", ".aif"]);
-const ALLOWED_AUDIO_MIME_TYPES = new Set(["audio/wav", "audio/x-wav", "audio/mpeg", "audio/flac", "audio/aiff", "audio/x-aiff"]);
+const ALLOWED_AUDIO_EXTENSIONS = new Set([".wav", ".flac"]);
+const REJECTED_AUDIO_EXTENSIONS = new Set([".mp3", ".aac", ".m4a", ".ogg", ".wma", ".aiff", ".aif"]);
+const ALLOWED_AUDIO_MIME_TYPES = new Set(["audio/wav", "audio/x-wav", "audio/wave", "audio/flac", "audio/x-flac"]);
 const MAX_AUDIO_BYTES = 500 * 1024 * 1024;
+const MIN_AUDIO_BYTES = 1 * 1024 * 1024;
 const MIN_DURATION_SEC = 30;
 const MAX_DURATION_SEC = 60 * 60 * 3;
 const MIN_SAMPLE_RATE_HZ = 44_100;
+const MIN_BIT_DEPTH = 16;
 const MAX_SILENCE_RATIO = 0.35;
 
 export class MediaValidationService {
@@ -16,10 +19,11 @@ export class MediaValidationService {
   validateUploadEnvelope(input: { filename: string; mimeType: string; sizeBytes: number }): MediaValidationIssue[] {
     const issues: MediaValidationIssue[] = [];
     const ext = extname(input.filename).toLowerCase();
-    if (!ALLOWED_AUDIO_EXTENSIONS.has(ext)) issues.push(error("unsupported_extension", "Audio must be WAV, MP3, FLAC, or AIFF."));
+    if (REJECTED_AUDIO_EXTENSIONS.has(ext)) issues.push(error("rejected_format", "Audio masters must be WAV or FLAC. MP3, AAC, M4A, OGG, WMA, and AIFF are rejected."));
+    else if (!ALLOWED_AUDIO_EXTENSIONS.has(ext)) issues.push(error("unsupported_extension", "Audio masters must be WAV or FLAC."));
     if (!ALLOWED_AUDIO_MIME_TYPES.has(input.mimeType.toLowerCase())) issues.push(error("unsupported_mime", "Audio MIME type is not allowed."));
     if (input.sizeBytes > MAX_AUDIO_BYTES) issues.push(error("oversized_file", "Audio file exceeds the 500 MB limit."));
-    if (input.sizeBytes < 1024) issues.push(error("empty_file", "Audio file is empty or truncated."));
+    if (input.sizeBytes <= MIN_AUDIO_BYTES) issues.push(error("file_too_small", "Audio file must be larger than 1 MB."));
     if (input.filename.includes("..") || input.filename.includes("/") || input.filename.includes("\\")) {
       issues.push(error("path_traversal", "Audio filename contains unsafe path characters."));
     }
@@ -41,6 +45,7 @@ export class MediaValidationService {
       const bitrateKbps = Math.round((readNumber(audioStream.bit_rate) ?? readNumber(probe.format?.bit_rate) ?? 0) / 1000) || null;
       const sampleRateHz = Math.round(readNumber(audioStream.sample_rate) ?? 0);
       const channels = audioStream.channels ?? 0;
+      const bitDepth = readBitDepth(audioStream);
       const codec = normalizeCodec(audioStream.codec_name || probe.format?.format_name);
       const peakDb = loudness.peakDb;
       const hasClipping = peakDb !== null && peakDb >= -0.1;
@@ -49,7 +54,9 @@ export class MediaValidationService {
       if (durationSec < MIN_DURATION_SEC) issues.push(error("duration_too_short", `Audio duration must be at least ${MIN_DURATION_SEC} seconds.`));
       if (durationSec > MAX_DURATION_SEC) issues.push(error("duration_too_long", "Audio duration exceeds the 3 hour limit."));
       if (sampleRateHz < MIN_SAMPLE_RATE_HZ) issues.push(error("sample_rate_too_low", "Audio sample rate must be at least 44.1 kHz."));
-      if (channels < 1 || channels > 2) issues.push(error("unsupported_channels", "Audio must be mono or stereo."));
+      if (channels !== 2) issues.push(error("not_stereo", "Audio must be stereo."));
+      if (bitDepth !== null && bitDepth < MIN_BIT_DEPTH) issues.push(error("bit_depth_too_low", "Audio bit depth must be at least 16-bit."));
+      if (bitDepth === null && codec === "wav") issues.push(error("bit_depth_unknown", "WAV bit depth could not be verified."));
       if (hasClipping) issues.push(error("clipping_detected", "Audio contains clipping and must be fixed before distribution."));
       if (silenceRatio > MAX_SILENCE_RATIO) issues.push(error("excessive_silence", "Audio contains too much silence for distribution."));
       if (bitrateKbps !== null && codec === "mp3" && bitrateKbps < 120) issues.push(error("bitrate_too_low", "MP3 bitrate is too low for distribution."));
@@ -60,6 +67,7 @@ export class MediaValidationService {
         codec,
         sampleRateHz,
         channels,
+        bitDepth,
         lufs: loudness.lufs,
         bpm: null,
         peakDb,
@@ -92,8 +100,19 @@ function normalizeCodec(value?: string): AudioCodec {
   if (codec.includes("flac")) return "flac";
   if (codec.includes("aiff") || codec.includes("aif")) return "aiff";
   if (codec.includes("aac")) return "aac";
+  if (codec.includes("ogg") || codec.includes("vorbis") || codec.includes("opus")) return "ogg";
+  if (codec.includes("wma")) return "wma";
   if (codec.includes("wav") || codec.includes("pcm")) return "wav";
   return "unknown";
+}
+
+function readBitDepth(stream: Record<string, unknown>): number | null {
+  const direct = readNumber(stream.bits_per_sample) ?? readNumber(stream.bits_per_raw_sample);
+  if (direct && direct > 0) return direct;
+  const sampleFmt = String(stream.sample_fmt || "").toLowerCase();
+  const match = sampleFmt.match(/(?:s|u|flt|dbl)(\d+)/);
+  if (match) return Number(match[1]);
+  return null;
 }
 
 function error(code: string, message: string): MediaValidationIssue {

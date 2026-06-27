@@ -15,7 +15,6 @@ export function validateProductionEnvironment(): EnvironmentValidationResult {
 
   requireWhen(production, "REDIS_URL", errors);
   requireWhen(production, "PAYMENT_DATABASE_URL", errors);
-  requireWhen(production, "REVELATOR_API_KEY", errors);
   for (const name of getRequiredServerEnvNames()) requireAlways(name, errors);
 
   const hasResend = Boolean(env.RESEND_API_KEY);
@@ -27,10 +26,17 @@ export function validateProductionEnvironment(): EnvironmentValidationResult {
     "PAYMENT_WEBHOOK_SECRET",
     "STRIPE_WEBHOOK_SECRET",
     "PAYPAL_WEBHOOK_SECRET",
-    "REVELATOR_WEBHOOK_SECRET",
+    "TOO_LOST_WEBHOOK_SECRET",
   ];
   if (production && webhookSecrets.every((name) => !env[name])) {
     errors.push("At least one webhook secret must be configured in production.");
+  }
+  if (!env.TOO_LOST_CLIENT_ID) warnings.push("TOO_LOST_CLIENT_ID is empty pending Too Lost app approval.");
+  if (!env.TOO_LOST_CLIENT_SECRET) warnings.push("TOO_LOST_CLIENT_SECRET is empty pending Too Lost app approval.");
+  if (!env.TOO_LOST_WEBHOOK_SECRET) warnings.push("TOO_LOST_WEBHOOK_SECRET is empty pending Too Lost webhook approval.");
+  if (!env.TOO_LOST_TOKEN_ENCRYPTION_KEY) warnings.push("TOO_LOST_TOKEN_ENCRYPTION_KEY is empty; token storage cannot be encrypted.");
+  if (env.TOO_LOST_INTEGRATION_APPROVED === "true" && (!env.TOO_LOST_CLIENT_ID || !env.TOO_LOST_CLIENT_SECRET || !env.TOO_LOST_WEBHOOK_SECRET || !env.TOO_LOST_TOKEN_ENCRYPTION_KEY)) {
+    errors.push("Too Lost live approval is enabled but OAuth/webhook/encryption credentials are incomplete.");
   }
 
   return { ok: errors.length === 0, errors, warnings };

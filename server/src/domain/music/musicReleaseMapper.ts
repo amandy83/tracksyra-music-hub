@@ -31,6 +31,8 @@ export type ReleaseTrackRows = {
     release_date?: string | null;
     genre?: string | null;
     language?: string | null;
+    upc?: string | null;
+    copyright_owner?: string | null;
     cover_art_url?: string | null;
     status?: string | null;
     created_at?: string | null;
@@ -87,6 +89,8 @@ export function mapReleaseAndTracksToMusicRelease(input: ReleaseTrackRows): Musi
     featuredArtists: splitFeaturedArtists(firstTrack?.featured_artists),
     genre: input.release.genre || "Unknown",
     language: input.release.language || "Unknown",
+    upc: input.release.upc ?? null,
+    copyright: input.release.copyright_owner ?? null,
     releaseDate: input.release.release_date ?? null,
     coverUrl: input.release.cover_art_url ?? null,
     audioFiles: input.tracks.map(mapTrackToAudioFile),
@@ -114,6 +118,8 @@ export function mapMusicReleaseToDistribution(input: {
       releaseDate: input.release.releaseDate,
       genre: input.release.genre,
       language: input.release.language,
+      upc: input.release.upc,
+      copyright: input.release.copyright,
       coverArtUrl: input.release.coverUrl,
       type: input.release.type,
     },

@@ -4,3 +4,6 @@ export * from "./core/rateCard";
 export * from "./core/royaltyEngine";
 export * from "./core/splitDistributionEngine";
 export * from "./services/royaltyStore";
+export * from "./adapters/revenueSourceAdapter";
+export * from "./adapters/providerRevenueAdapters";
+export * from "./statements/statementGenerator";

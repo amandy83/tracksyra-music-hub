@@ -170,6 +170,34 @@ export function renderEmailTemplate(template: string, data: Record<string, any>)
       cta: { label: "Open Admin", url: `${BRAND.site}/admin` },
     });
   }
+  if (template === "curator_pitch_submitted") {
+    return brandEmailLayout({
+      title: "Curator pitch submitted",
+      body: `<p>Hi ${name},</p><p>Your curator outreach was submitted. We will track views, responses, and curator feedback in your marketplace dashboard.</p>${notes}`,
+      cta: { label: "Open Marketplace", url: `${BRAND.dashboard}/curator-marketplace` },
+    });
+  }
+  if (template === "curator_pitch_accepted") {
+    return brandEmailLayout({
+      title: "A curator accepted your pitch",
+      body: `<p>Hi ${name},</p><p>A curator accepted your pitch. Open the curator marketplace to review the placement details and feedback.</p>${notes}`,
+      cta: { label: "View Outreach", url: `${BRAND.dashboard}/curator-marketplace` },
+    });
+  }
+  if (template === "curator_pitch_rejected") {
+    return brandEmailLayout({
+      title: "Update on your curator pitch",
+      body: `<p>Hi ${name},</p><p>Your curator pitch was not accepted this time. Review the feedback and use it to refine future outreach.</p>${notes}`,
+      cta: { label: "View Feedback", url: `${BRAND.dashboard}/curator-marketplace` },
+    });
+  }
+  if (template === "curator_response_received") {
+    return brandEmailLayout({
+      title: "Curator response received",
+      body: `<p>Hi ${name},</p><p>A curator responded to your pitch. The response and notes are available in your curator marketplace outreach history.</p>${notes}`,
+      cta: { label: "Open Outreach", url: `${BRAND.dashboard}/curator-marketplace` },
+    });
+  }
   return brandEmailLayout({
     title: "Hello from TrackSyra",
     body: `<p>Hi ${name},</p><p>${message || "Thanks for being part of TrackSyra."}</p>`,

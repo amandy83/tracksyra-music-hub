@@ -53,7 +53,7 @@ const Logo = forwardRef<HTMLDivElement, LogoProps>(
         {/* Logo Text */}
         {showText && (
           <div className="flex flex-col">
-            <span className={`font-syne font-bold ${textSizeClasses[size]} gradient-text tracking-tight`}>
+<span className={`font-syne font-bold ${textSizeClasses[size]} gradient-text tracking-tight text-pink-500`}>
               TrackSyra
             </span>
             {size === "lg" && (

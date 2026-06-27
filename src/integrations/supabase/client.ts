@@ -3,15 +3,35 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const missingEnv = [
+  ["VITE_SUPABASE_URL", SUPABASE_URL],
+  ["VITE_SUPABASE_ANON_KEY", SUPABASE_ANON_KEY],
+].filter(([, value]) => !value).map(([name]) => name);
+
+console.info("[frontend] env loaded", { source: "import.meta.env" });
+if (missingEnv.length) console.warn("[frontend] missing env", { missing: missingEnv });
+console.info("[frontend] runtime env validation", {
+  ok: missingEnv.length === 0,
+  values: {
+    VITE_SUPABASE_URL: mask(SUPABASE_URL),
+    VITE_SUPABASE_ANON_KEY: mask(SUPABASE_ANON_KEY),
+  },
+});
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
   }
 });
+
+function mask(value?: string) {
+  if (!value) return "<missing>";
+  if (value.length <= 8) return "********";
+  return `${value.slice(0, 4)}...${value.slice(-4)}`;
+}

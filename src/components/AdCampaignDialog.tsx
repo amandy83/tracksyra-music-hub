@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 
-type SongOpt = { id: string; title: string };
+type ReleaseOpt = { id: string; title: string };
 
 const schema = z.object({
   song_id: z.string().uuid(),
@@ -26,13 +26,13 @@ const schema = z.object({
 });
 
 type Props = {
-  songs: SongOpt[];
+  releases: ReleaseOpt[];
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onSuccess: () => void;
 };
 
-const AdCampaignDialog = ({ songs, open, onOpenChange, onSuccess }: Props) => {
+const AdCampaignDialog = ({ releases, open, onOpenChange, onSuccess }: Props) => {
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
   const [songId, setSongId] = useState("");
@@ -72,14 +72,14 @@ const AdCampaignDialog = ({ songs, open, onOpenChange, onSuccess }: Props) => {
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Run Ads on Spotify / Streaming Platforms</DialogTitle>
-          <DialogDescription>Promote your song with paid ads. Min budget ₹500. Our team handles setup.</DialogDescription>
+          <DialogDescription>Promote your release with paid ads. Min budget ₹500. Our team handles setup.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label>Song *</Label>
+            <Label>Release *</Label>
             <Select value={songId} onValueChange={setSongId} required>
-              <SelectTrigger><SelectValue placeholder="Select song" /></SelectTrigger>
-              <SelectContent>{songs.map(s => <SelectItem key={s.id} value={s.id}>{s.title}</SelectItem>)}</SelectContent>
+              <SelectTrigger><SelectValue placeholder="Select release" /></SelectTrigger>
+              <SelectContent>{releases.map(release => <SelectItem key={release.id} value={release.id}>{release.title}</SelectItem>)}</SelectContent>
             </Select>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

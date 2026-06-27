@@ -1,8 +1,14 @@
 export const DISTRIBUTION_PLATFORMS = [
-  "revelator",
+  "too_lost",
+] as const;
+
+export const DISTRIBUTION_PROVIDERS = [
+  "internal",
+  "too_lost",
 ] as const;
 
 export type DistributionPlatform = (typeof DISTRIBUTION_PLATFORMS)[number];
+export type DistributionProvider = (typeof DISTRIBUTION_PROVIDERS)[number];
 export type LegacyDistributionPlatform = "spotify" | "apple_music" | "youtube_music" | "deezer" | "amazon_music";
 export type DistributionPlatformName = DistributionPlatform | LegacyDistributionPlatform;
 
@@ -39,6 +45,8 @@ export type DistributionRelease = {
   releaseDate?: string | null;
   genre?: string | null;
   language?: string | null;
+  upc?: string | null;
+  copyright?: string | null;
   coverArtUrl?: string | null;
   type?: "single" | "ep" | "album";
 };
@@ -63,6 +71,6 @@ export type NormalizedDistributionError = {
   errorCode: string;
   message: string;
   platform: DistributionPlatformName;
-  provider: "revelator";
+  provider: DistributionProvider;
   retryable: boolean;
 };

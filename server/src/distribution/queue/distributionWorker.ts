@@ -17,6 +17,8 @@ import { queueNames } from "../../queue/queueNames";
 import type { DistributionJob as BullDistributionJob } from "../../queue/jobTypes";
 import { captureException } from "../../observability/errorTracker";
 
+const TOO_LOST_PROVIDER = "too_lost" as const;
+
 export type DistributionWorkerOptions = {
   adapterRegistry?: PlatformAdapterRegistry;
   retryEngine?: RetryEngine;
@@ -59,7 +61,7 @@ export class DistributionWorker {
       if (!payload) throw new Error(`Distribution payload not found for job ${job.id}`);
 
       const adapter = this.adapterRegistry.get(job.platform);
-      const providerPlatform = adapter.name as "revelator";
+      const providerPlatform = adapter.name as typeof TOO_LOST_PROVIDER;
 
       await this.store.ensurePlatformDelivery({
         releaseId: job.releaseId,
@@ -115,13 +117,13 @@ export class DistributionWorker {
       await this.store.recordDeliveryResult({
         releaseId: job.releaseId,
         trackId: job.trackId,
-        platform: "revelator",
+        platform: TOO_LOST_PROVIDER,
         status: "FAILED",
         rawResponse: { error: normalized },
         error: normalized,
       });
       await this.applyRetryDecision(job, normalized, decision);
-      await this.analyticsService?.refreshPlatformMetrics("revelator");
+      await this.analyticsService?.refreshPlatformMetrics(TOO_LOST_PROVIDER);
     }
   }
 
@@ -141,7 +143,7 @@ export class DistributionWorker {
         errorCode: error.errorCode,
         message: error.message,
         platform,
-        provider: "revelator",
+        provider: TOO_LOST_PROVIDER,
         retryable: error.retryable,
       };
     }
@@ -150,7 +152,7 @@ export class DistributionWorker {
       errorCode: "DISTRIBUTION_WORKER_ERROR",
       message: error instanceof Error ? error.message : String(error),
       platform,
-      provider: "revelator",
+      provider: TOO_LOST_PROVIDER,
       retryable: true,
     };
   }
@@ -182,7 +184,7 @@ export class DistributionWorker {
         jobId: job.id,
         releaseId: job.releaseId,
         trackId: job.trackId,
-        platform: "revelator",
+        platform: TOO_LOST_PROVIDER,
         attempt: this.attemptNumber(job) + 1,
         retryAt: decision.retryAt,
         error,
@@ -196,7 +198,7 @@ export class DistributionWorker {
         jobId: job.id,
         releaseId: job.releaseId,
         trackId: job.trackId,
-        platform: "revelator",
+        platform: TOO_LOST_PROVIDER,
         attempt: this.attemptNumber(job) + 1,
         error,
       });
@@ -219,7 +221,7 @@ export class DistributionWorker {
       jobId: job.id,
       releaseId: job.releaseId,
       trackId: job.trackId ?? null,
-      platform: "revelator",
+      platform: TOO_LOST_PROVIDER,
       nextStatus,
       source,
       metadata,

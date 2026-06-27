@@ -1,6 +1,6 @@
 export * from "./models/distributionTypes";
 export * from "./adapters";
-export * from "./providers/revelator";
+export * from "./providers/too-lost";
 export * from "./intelligence";
 export * from "./webhooks";
 export * from "./analytics";

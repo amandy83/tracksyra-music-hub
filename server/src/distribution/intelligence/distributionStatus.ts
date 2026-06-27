@@ -5,6 +5,7 @@ export enum DistributionStatus {
   IN_REVIEW = "IN_REVIEW",
   APPROVED = "APPROVED",
   DELIVERED = "DELIVERED",
+  PUBLISHED = "PUBLISHED",
   REJECTED = "REJECTED",
   FAILED = "FAILED",
   DEAD_LETTER = "DEAD_LETTER",
@@ -36,8 +37,9 @@ const transitions: Record<DistributionStatus, readonly DistributionStatus[]> = {
     DistributionStatus.REJECTED,
     DistributionStatus.DEAD_LETTER,
   ],
-  [DistributionStatus.APPROVED]: [DistributionStatus.DELIVERED, DistributionStatus.FAILED, DistributionStatus.DEAD_LETTER],
-  [DistributionStatus.DELIVERED]: [],
+  [DistributionStatus.APPROVED]: [DistributionStatus.DELIVERED, DistributionStatus.PUBLISHED, DistributionStatus.FAILED, DistributionStatus.DEAD_LETTER],
+  [DistributionStatus.DELIVERED]: [DistributionStatus.PUBLISHED],
+  [DistributionStatus.PUBLISHED]: [],
   [DistributionStatus.REJECTED]: [DistributionStatus.PROCESSING, DistributionStatus.DEAD_LETTER],
   [DistributionStatus.FAILED]: [DistributionStatus.PROCESSING, DistributionStatus.DEAD_LETTER],
   [DistributionStatus.DEAD_LETTER]: [DistributionStatus.PROCESSING],
@@ -47,7 +49,7 @@ export function canTransitionDistributionStatus(
   previous: DistributionStatus | null | undefined,
   next: DistributionStatus,
 ): boolean {
-  if (!previous) return next === DistributionStatus.PENDING || next === DistributionStatus.PROCESSING;
+  if (!previous) return next !== DistributionStatus.DEAD_LETTER;
   if (previous === next) return true;
   return transitions[previous]?.includes(next) ?? false;
 }
@@ -64,8 +66,8 @@ export function assertDistributionStatusTransition(
 export function mapProviderStatus(value: string): DistributionStatus {
   const normalized = value.trim().toUpperCase();
   if (normalized in DistributionStatus) return DistributionStatus[normalized as keyof typeof DistributionStatus];
-  if (normalized === "PUBLISHED") return DistributionStatus.DELIVERED;
+  if (normalized === "LIVE") return DistributionStatus.PUBLISHED;
+  if (normalized === "PUBLISHED") return DistributionStatus.PUBLISHED;
   if (normalized === "DELIVERY_FAILED") return DistributionStatus.FAILED;
   return DistributionStatus.PROCESSING;
 }
-

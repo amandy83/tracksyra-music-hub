@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
-type SongOpt = { id: string; title: string };
+type ReleaseOpt = { id: string; title: string };
 type ExistingPitch = {
   id: string;
   song_id: string;
@@ -26,7 +26,7 @@ type ExistingPitch = {
 };
 
 const schema = z.object({
-  song_id: z.string().uuid("Please select a song"),
+  song_id: z.string().uuid("Please select a release"),
   target_playlist: z.string().trim().min(2, "Playlist name too short").max(200),
   platform: z.string(),
   genre: z.string().max(50).optional(),
@@ -41,14 +41,14 @@ const schema = z.object({
 });
 
 type Props = {
-  songs: SongOpt[];
+  releases: ReleaseOpt[];
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onSuccess: () => void;
   existing?: ExistingPitch | null;
 };
 
-const PlaylistPitchDialog = ({ songs, open, onOpenChange, onSuccess, existing }: Props) => {
+const PlaylistPitchDialog = ({ releases, open, onOpenChange, onSuccess, existing }: Props) => {
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
   const [songId, setSongId] = useState("");
@@ -142,7 +142,7 @@ const PlaylistPitchDialog = ({ songs, open, onOpenChange, onSuccess, existing }:
           <ul className="space-y-1 text-pink-900/80 text-xs">
             <li>✓ Write your own story — no copy-paste, no AI-generic text</li>
             <li>✓ Mention inspiration, recording process, or emotional core</li>
-            <li>✓ Be specific about why this playlist fits your song</li>
+            <li>✓ Be specific about why this playlist fits your release</li>
             <li>✗ No spam, fake stats, or paid-promotion language</li>
             <li>✗ No duplicate pitches for the same playlist</li>
           </ul>
@@ -156,15 +156,15 @@ const PlaylistPitchDialog = ({ songs, open, onOpenChange, onSuccess, existing }:
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label>Song *</Label>
+            <Label>Release *</Label>
             <Select value={songId} onValueChange={setSongId} disabled={lockedDuringReview} required>
               <SelectTrigger>
-                <SelectValue placeholder="Select your song" />
+                <SelectValue placeholder="Select your release" />
               </SelectTrigger>
               <SelectContent>
-                {songs.map((s) => (
-                  <SelectItem key={s.id} value={s.id}>
-                    {s.title}
+                {releases.map((release) => (
+                  <SelectItem key={release.id} value={release.id}>
+                    {release.title}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -256,7 +256,7 @@ const PlaylistPitchDialog = ({ songs, open, onOpenChange, onSuccess, existing }:
               value={story}
               onChange={(e) => setStory(e.target.value)}
               disabled={lockedDuringReview}
-              placeholder="Share the inspiration, story, and what makes this song special. Authentic pitches get prioritized by editors."
+              placeholder="Share the inspiration, story, and what makes this release special. Authentic pitches get prioritized by editors."
               className={!storyOk && storyLen > 0 ? "border-destructive/50" : ""}
             />
           </div>

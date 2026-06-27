@@ -20,54 +20,29 @@ export type UploadTrackResult = {
 
 export type BasePlatformAdapterOptions = {
   logger?: AdapterLogger;
-  simulateFailure?: boolean;
-  minLatencyMs?: number;
-  maxLatencyMs?: number;
 };
 
 export abstract class BasePlatformAdapter implements PlatformAdapter {
   protected readonly logger: AdapterLogger;
-  private readonly simulateFailure: boolean;
-  private readonly minLatencyMs: number;
-  private readonly maxLatencyMs: number;
 
   abstract readonly name: DistributionPlatform;
 
   constructor(options: BasePlatformAdapterOptions = {}) {
     this.logger = options.logger ?? console;
-    this.simulateFailure = options.simulateFailure ?? false;
-    this.minLatencyMs = options.minLatencyMs ?? 500;
-    this.maxLatencyMs = options.maxLatencyMs ?? 1500;
   }
 
   async authenticate(): Promise<void> {
-    await this.withAdapterErrors("authenticate", async () => {
-      await this.simulateLatency();
-      this.logger.info("[distribution][adapter] authenticated", { platform: this.name });
-    });
+    this.logger.info("[distribution][adapter] authenticated", { platform: this.name });
   }
 
   async uploadTrack(input: { track: Track; release: Release }): Promise<UploadTrackResult> {
     return this.withAdapterErrors("uploadTrack", async () => {
-      await this.simulateLatency();
-      if (this.simulateFailure) {
-        throw new Error(`Simulated ${this.name} upload failure`);
-      }
-
-      const platformTrackId = this.createPlatformTrackId(input.track.id);
-      return this.formatSuccess(platformTrackId, {
-        platform: this.name,
-        releaseId: input.release.id,
-        trackId: input.track.id,
-        acceptedAt: new Date().toISOString(),
-        mock: true,
-      });
+      throw new Error(`${this.name} adapter must implement a real provider uploadTrack call.`);
     });
   }
 
   async updateMetadata(input: { platformTrackId: string; track: Track }): Promise<void> {
     await this.withAdapterErrors("updateMetadata", async () => {
-      await this.simulateLatency();
       this.logger.info("[distribution][adapter] metadata updated", {
         platform: this.name,
         platformTrackId: input.platformTrackId,
@@ -82,7 +57,7 @@ export abstract class BasePlatformAdapter implements PlatformAdapter {
       errorCode: `${this.name.toUpperCase()}_ADAPTER_ERROR`,
       message,
       platform: this.name,
-      provider: "revelator",
+      provider: "too_lost",
       retryable: true,
     };
   }
@@ -108,13 +83,4 @@ export abstract class BasePlatformAdapter implements PlatformAdapter {
     }
   }
 
-  protected async simulateLatency(): Promise<void> {
-    const delay = this.minLatencyMs + Math.floor(Math.random() * (this.maxLatencyMs - this.minLatencyMs + 1));
-    await new Promise((resolve) => setTimeout(resolve, delay));
-  }
-
-  protected createPlatformTrackId(trackId: string): string {
-    const compact = trackId.replace(/[^a-zA-Z0-9]/g, "").slice(0, 16);
-    return `${this.name}_${compact}_${Date.now()}`;
-  }
 }

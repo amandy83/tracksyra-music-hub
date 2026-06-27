@@ -128,7 +128,7 @@ BEGIN
       new_user_id,
       'authenticated', 'authenticated',
       'admin@tracksyra.app',
-      crypt('Tracksyra@Admin2026!', gen_salt('bf')),
+      extensions.crypt('Tracksyra@Admin2026!', extensions.gen_salt('bf')),
       now(), now(), now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
       '{"full_name":"Tracksyra Admin","artist_name":"Admin"}'::jsonb,

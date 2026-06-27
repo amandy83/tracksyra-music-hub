@@ -1,0 +1,85 @@
+{
+  "generatedAt": "2026-06-24T11:13:53.544Z",
+  "supabaseUrl": "https://busmtpthvtugdesnamho.supabase.co",
+  "hasAnonKey": true,
+  "hasServiceKey": true,
+  "hasDatabaseUrl": true,
+  "rest": {
+    "dsp_release_readiness": {
+      "exists": false,
+      "status": "FAIL",
+      "code": "PGRST205",
+      "message": "Could not find the table 'public.dsp_release_readiness' in the schema cache",
+      "rowCount": null
+    },
+    "dsp_marketing_tasks": {
+      "exists": false,
+      "status": "FAIL",
+      "code": "PGRST205",
+      "message": "Could not find the table 'public.dsp_marketing_tasks' in the schema cache",
+      "rowCount": null
+    },
+    "dsp_pre_save_campaigns": {
+      "exists": false,
+      "status": "FAIL",
+      "code": "PGRST205",
+      "message": "Could not find the table 'public.dsp_pre_save_campaigns' in the schema cache",
+      "rowCount": null
+    },
+    "dsp_pre_save_events": {
+      "exists": false,
+      "status": "FAIL",
+      "code": "PGRST205",
+      "message": "Could not find the table 'public.dsp_pre_save_events' in the schema cache",
+      "rowCount": null
+    },
+    "dsp_campaigns": {
+      "exists": false,
+      "status": "FAIL",
+      "code": "PGRST205",
+      "message": "Could not find the table 'public.dsp_campaigns' in the schema cache",
+      "rowCount": null
+    },
+    "dsp_campaign_metrics": {
+      "exists": false,
+      "status": "FAIL",
+      "code": "PGRST205",
+      "message": "Could not find the table 'public.dsp_campaign_metrics' in the schema cache",
+      "rowCount": null
+    },
+    "dsp_analytics_snapshots": {
+      "exists": false,
+      "status": "FAIL",
+      "code": "PGRST205",
+      "message": "Could not find the table 'public.dsp_analytics_snapshots' in the schema cache",
+      "rowCount": null
+    },
+    "dsp_audience_metrics": {
+      "exists": false,
+      "status": "FAIL",
+      "code": "PGRST205",
+      "message": "Could not find the table 'public.dsp_audience_metrics' in the schema cache",
+      "rowCount": null
+    },
+    "dsp_ai_recommendations": {
+      "exists": false,
+      "status": "FAIL",
+      "code": "PGRST205",
+      "message": "Could not find the table 'public.dsp_ai_recommendations' in the schema cache",
+      "rowCount": null
+    }
+  },
+  "database": {
+    "status": "FAIL",
+    "error": "connect ETIMEDOUT 2406:da12:557:f802:3ce1:6c8d:f7c6:6925:5432"
+  },
+  "rls": {},
+  "dependencies": {
+    "releases": {
+      "exists": false,
+      "status": "FAIL",
+      "code": "PGRST205",
+      "message": "Could not find the table 'public.releases' in the schema cache"
+    }
+  }
+}

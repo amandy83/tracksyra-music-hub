@@ -20,6 +20,8 @@ import { z } from "zod";
 
 import { supabase } from "@/integrations/supabase/client";
 
+const client = supabase as any;
+
 const COUNTRIES = [
   "Afghanistan","Albania","Algeria","Andorra","Angola","Antarctica","Antigua & Barbuda","Argentina","Armenia","Aruba","Australia","Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh","Barbados","Belarus","Belgium","Belize","Benin","Bermuda","Bhutan","Bolivia","Bosnia & Herzegovina","Botswana","Bouvet Island","Brazil","British Indian Ocean Territory","Brunei","Bulgaria","Burkina Faso","Burundi","Cambodia","Cameroon","Canada","Canary Islands","Cape Verde","Caribbean Netherlands","Cayman Islands","Central African Republic","Ceuta & Melilla","Chad","Chile","China","Christmas Island","Clipperton Island","Cocos (Keeling) Islands","Colombia","Comoros","Congo – Brazzaville","Congo – Kinshasa","Cook Islands","Costa Rica","Croatia","Curaçao","Cyprus","Czech Republic","Côte d'Ivoire","Denmark","Diego Garcia","Djibouti","Dominican Republic","Ecuador","Egypt","El Salvador","Equatorial Guinea","Eritrea","Estonia","Eswatini","Ethiopia","Falkland Islands","Faroe Islands","Finland","France","French Guiana","French Polynesia","French Southern Territories","Gabon","Gambia","Georgia","Germany","Ghana","Gibraltar","Greece","Greenland","Grenada","Guadeloupe","Guatemala","Guernsey","Guinea","Guinea-Bissau","Guyana","Haiti","Heard & McDonald Islands","Honduras","Hong Kong","Hungary","Iceland","India","Indonesia","Iraq","Ireland","Isle of Man","Israel","Italy","Jamaica","Japan","Jersey","Jordan","Kazakhstan","Kenya","Kiribati","Kosovo","Kuwait","Kyrgyzstan","Laos","Latvia","Lebanon","Lesotho","Liberia","Libya","Liechtenstein","Lithuania","Luxembourg","Macao","Madagascar","Malawi","Malaysia","Maldives","Mali","Malta","Marshall Islands","Martinique","Mauritania","Mauritius","Mayotte","Mexico","Micronesia","Moldova, Republic of","Monaco","Mongolia","Montenegro","Montserrat","Morocco","Mozambique","Myanmar (Burma)","Namibia","Nauru","Nepal","Netherlands","Netherlands Antilles","New Caledonia","New Zealand","Nicaragua","Niger","Nigeria","Niue","Norfolk Island","Northern Mariana Islands","North Macedonia","Norway","Oman","Outlying Oceania","Pakistan","Palau","Palestinian Territories","Papua New Guinea","Paraguay","Peru","Philippines","Pitcairn Islands","Poland","Portugal","Puerto Rico","Qatar","Romania","Russia","Rwanda","Réunion","San Marino","Saudi Arabia","Senegal","Serbia","Sierra Leone","Singapore","Sint Maarten","Slovakia","Slovenia","Solomon Islands","Somalia","South Africa","South Georgia & South Sandwich Islands","South Korea","South Sudan","Spain","Sri Lanka","Saint Barthélemy","Saint Helena, Ascension and Tristan Da Cunha","Saint Kitts & Nevis","Saint Lucia","Saint Martin","Saint Pierre & Miquelon","Saint Vincent & The Grenadines","Sudan","Suriname","Svalbard & Jan Mayen","Sweden","Switzerland","São Tomé & Príncipe","Taiwan","Tajikistan","Tanzania","Thailand","Timor-Leste","Togo","Tokelau","Tonga","Trinidad & Tobago","Tristan da Cunha","Tunisia","Turkey","Turkmenistan","Turks & Caicos Islands","Tuvalu","U.S. Outlying Islands","Uganda","Ukraine","United Arab Emirates","United Kingdom","United States","Uruguay","Uzbekistan","Vatican City","Venezuela","Vietnam","Wallis & Futuna","Western Sahara","Yemen","Zambia","Zimbabwe","Åland Islands"
 ];
@@ -38,6 +40,8 @@ const artistSchema = z.object({
   firstName: z.string().trim().min(1, "Required").max(100),
   lastName: z.string().trim().min(1, "Required").max(100),
   email: z.string().trim().email("Invalid email").max(255),
+  password: z.string().min(8, "Password must be at least 8 characters").max(72),
+  confirmPassword: z.string().min(8, "Confirm your password").max(72),
   phone: z.string().trim().min(5, "Required").max(30),
   country: z.string().min(1, "Required"),
   city: z.string().trim().min(1, "Required").max(100),
@@ -51,7 +55,12 @@ const artistSchema = z.object({
   streamingPlatform: z.string().min(1, "Required"),
   monthlyListeners: z.string().min(1, "Required"),
   socials: z.string().optional(),
+  authProvider: z.enum(["email", "google", "apple", "facebook"]).default("email"),
+  providerUserId: z.string().nullable().optional(),
   privacyAccepted: z.literal(true, { errorMap: () => ({ message: "You must accept the privacy policy" }) }),
+}).refine((data) => data.password === data.confirmPassword, {
+  path: ["confirmPassword"],
+  message: "Passwords do not match",
 });
 
 const publisherSchema = z.object({
@@ -102,6 +111,36 @@ const submitToBackend = async (formType: string, payload: Record<string, any>) =
   return { success: !error, error };
 };
 
+const isDuplicateAuthError = (message?: string | null) =>
+  /user already registered|email_exists|already_in_use|already registered|already exists|email.*exist|email.*registered/i.test(message || "");
+
+const submitArtistRequest = async (payload: Record<string, any>) => {
+  const name = [payload.firstName, payload.lastName].filter(Boolean).join(" ") || payload.artistName;
+  const requestData = { ...payload };
+  delete requestData.password;
+  delete requestData.confirmPassword;
+
+  const [requestResult, submissionResult] = await Promise.all([
+    client.rpc("submit_artist_request", {
+      p_name: name,
+      p_email: payload.email,
+      p_request_data: requestData,
+      p_auth_provider: payload.authProvider || "email",
+      p_provider_user_id: payload.providerUserId || null,
+    }),
+    submitToBackend("Artist/Label/Songwriter", requestData),
+  ]);
+
+  if (!requestResult.error) {
+    void supabase.functions.invoke("send-emails", { body: {} });
+  }
+
+  return {
+    success: !requestResult.error && submissionResult.success,
+    error: requestResult.error || submissionResult.error,
+  };
+};
+
 const FieldError = ({ msg }: { msg?: string }) =>
   msg ? <p className="text-xs text-destructive mt-1">{msg}</p> : null;
 
@@ -120,6 +159,8 @@ const ArtistForm = () => {
   const [data, setData] = useState({
     role: "Artist",
     firstName: "", lastName: "", email: "", phone: "", country: "", city: "",
+    password: "", confirmPassword: "",
+    authProvider: "email", providerUserId: null as string | null,
     artistName: "", genre: "", distributor: "", trackCount: "",
     firstReleaseDate: "", lastReleaseDate: "", privateLink: "",
     streamingPlatform: "Spotify", monthlyListeners: "", socials: "",
@@ -144,13 +185,53 @@ const ArtistForm = () => {
     }
     setSubmitting(true);
     try {
-      const res = await submitToBackend("Artist/Label/Songwriter", data);
+      let duplicateAccount = false;
+      const signUp = await supabase.auth.signUp({
+        email: result.data.email,
+        password: result.data.password,
+        options: {
+          data: {
+            full_name: [result.data.firstName, result.data.lastName].join(" "),
+            artist_name: result.data.artistName,
+          },
+        },
+      });
+      if (signUp.data.user && Array.isArray((signUp.data.user as any).identities) && (signUp.data.user as any).identities.length === 0) {
+        duplicateAccount = true;
+      }
+      if (signUp.error && isDuplicateAuthError(signUp.error.message)) {
+        duplicateAccount = true;
+      } else if (signUp.error) {
+        throw signUp.error;
+      }
+      const res = await submitArtistRequest(data);
       if (res.success) {
-        toast({ title: "Submitted!", description: "Our team will review your submission." });
-        setData((p) => ({ ...p, firstName: "", lastName: "", email: "", phone: "", city: "", artistName: "", privateLink: "", socials: "", privacyAccepted: false }));
-      } else throw new Error();
-    } catch {
-      toast({ title: "Error", description: "Failed to submit. Try again.", variant: "destructive" });
+        toast({
+          title: "Submitted!",
+          description: duplicateAccount
+            ? "Account already exists. Please login to continue onboarding. Your request is pending review."
+            : "Your request is pending review. Check your email for confirmation.",
+        });
+        setData((p) => ({ ...p, firstName: "", lastName: "", email: "", password: "", confirmPassword: "", phone: "", city: "", artistName: "", privateLink: "", socials: "", privacyAccepted: false }));
+      } else if (duplicateAccount) {
+        toast({
+          title: "Account already exists",
+          description: "Account already exists. Please login to continue onboarding.",
+          variant: "destructive",
+        });
+      } else {
+        throw new Error();
+      }
+    } catch (error: any) {
+      if (isDuplicateAuthError(error?.message)) {
+        toast({
+          title: "Account already exists",
+          description: "Account already exists. Please login to continue onboarding.",
+          variant: "destructive",
+        });
+      } else {
+        toast({ title: "Error", description: "Failed to submit. Try again.", variant: "destructive" });
+      }
     } finally { setSubmitting(false); }
   };
 
@@ -187,6 +268,16 @@ const ArtistForm = () => {
               <Label htmlFor="email">Email*</Label>
               <Input id="email" type="email" value={data.email} onChange={(e) => update("email", e.target.value)} className="mt-1" />
               <FieldError msg={errors.email} />
+            </div>
+            <div>
+              <Label htmlFor="password">Password*</Label>
+              <Input id="password" type="password" value={data.password} onChange={(e) => update("password", e.target.value)} className="mt-1" />
+              <FieldError msg={errors.password} />
+            </div>
+            <div>
+              <Label htmlFor="confirmPassword">Confirm password*</Label>
+              <Input id="confirmPassword" type="password" value={data.confirmPassword} onChange={(e) => update("confirmPassword", e.target.value)} className="mt-1" />
+              <FieldError msg={errors.confirmPassword} />
             </div>
             <div>
               <Label htmlFor="phone">Phone*</Label>

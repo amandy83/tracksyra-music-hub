@@ -13,6 +13,7 @@ import { startOperationsServer } from "../../http/operationsServer";
 import { MediaProcessingEngine } from "../../media/services/MediaProcessingEngine";
 import { registerArtworkProcessingWorker, registerFingerprintAnalysisWorker, registerMediaProcessingWorker, registerWaveformGenerationWorker } from "../../media/workers/mediaWorkers";
 import { loadRuntimeEnv, logRuntimeEnv } from "../../config/envLoader";
+import { registerPromoAssetWorker } from "../promoAssetWorker";
 
 export type StartWorkersDeps = {
   distributionStore?: DistributionStore;
@@ -69,10 +70,11 @@ export async function startWorkers(deps: StartWorkersDeps = {}): Promise<WorkerR
     runtime.register({ name: "waveform-generation", worker: registerWaveformGenerationWorker(deps.mediaProcessingEngine, { concurrency: env.workerConcurrency }) });
     runtime.register({ name: "fingerprint-analysis", worker: registerFingerprintAnalysisWorker(deps.mediaProcessingEngine, { concurrency: env.workerConcurrency }) });
   }
+  runtime.register({ name: "promo-asset-processing", worker: await registerPromoAssetWorker() });
 
   runtime.startHeartbeat();
   runtime.installSignalHandlers();
-  const operations = startOperationsServer(runtime);
+  const operations = await startOperationsServer(runtime);
   const originalShutdown = runtime.shutdown.bind(runtime);
   runtime.shutdown = async () => {
     await operations.close();

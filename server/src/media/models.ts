@@ -28,7 +28,7 @@ export type MediaProcessingJobType =
 
 export type MediaProcessingStatus = "queued" | "processing" | "completed" | "failed" | "rejected";
 
-export type AudioCodec = "wav" | "mp3" | "flac" | "aiff" | "aac" | "unknown";
+export type AudioCodec = "wav" | "mp3" | "flac" | "aiff" | "aac" | "ogg" | "wma" | "unknown";
 
 export type AudioQualityMetadata = {
   bitrateKbps: number | null;
@@ -36,6 +36,7 @@ export type AudioQualityMetadata = {
   codec: AudioCodec;
   sampleRateHz: number;
   channels: number;
+  bitDepth: number | null;
   lufs: number | null;
   bpm: number | null;
   peakDb: number | null;
