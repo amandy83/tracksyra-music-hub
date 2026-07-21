@@ -1,0 +1,26 @@
+{
+  "name": "tracksyra-backend",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "postbuild": "node scripts/add-js-extensions.cjs",
+    "start": "node scripts/start.cjs",
+    "worker": "node scripts/worker.cjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.105.3",
+    "bullmq": "^5.77.6",
+    "express": "^5.2.1",
+    "ioredis": "^5.11.0",
+    "pg": "^8.22.0",
+    "sequelize": "^6.37.8",
+    "typescript": "^5.9.3",
+    "uuid": "^14.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.20.0"
+  }
+}
